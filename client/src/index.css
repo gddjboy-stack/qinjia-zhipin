@@ -3,6 +3,9 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Google Fonts: Source Han Sans for warm, modern typography */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
+
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -43,39 +46,37 @@
 }
 
 :root {
-  --primary: var(--color-blue-700);
-  --primary-foreground: var(--color-blue-50);
-  --sidebar-primary: var(--color-blue-600);
-  --sidebar-primary-foreground: var(--color-blue-50);
-  --chart-1: var(--color-blue-300);
-  --chart-2: var(--color-blue-500);
-  --chart-3: var(--color-blue-600);
-  --chart-4: var(--color-blue-700);
-  --chart-5: var(--color-blue-800);
-  --radius: 0.65rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.235 0.015 65);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.235 0.015 65);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.235 0.015 65);
-  --secondary: oklch(0.98 0.001 286.375);
-  --secondary-foreground: oklch(0.4 0.015 65);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.141 0.005 285.823);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.623 0.214 259.815);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.235 0.015 65);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.623 0.214 259.815);
+  /* Warm Care Design System - Primary Colors */
+  --primary: #FF8C42;           /* Warm Orange */
+  --primary-foreground: #FFFFFF;
+  --secondary: #4A90E2;         /* Trust Blue */
+  --secondary-foreground: #FFFFFF;
+  --success: #52C41A;           /* Success Green */
+  --success-foreground: #FFFFFF;
+  
+  /* Semantic Colors */
+  --radius: 0.75rem;            /* Slightly larger radius for warmth */
+  --background: #FAFAF8;        /* Soft warm white */
+  --foreground: #2C3E50;        /* Deep gray text */
+  --card: #FFFFFF;              /* Pure white cards */
+  --card-foreground: #2C3E50;
+  --popover: #FFFFFF;
+  --popover-foreground: #2C3E50;
+  --muted: #F0EFED;             /* Light gray for muted elements */
+  --muted-foreground: #7A8A99;  /* Muted text */
+  --accent: #FF8C42;            /* Same as primary for accent */
+  --accent-foreground: #FFFFFF;
+  --destructive: #E74C3C;       /* Warm red */
+  --destructive-foreground: #FFFFFF;
+  --border: #E8E8E6;            /* Very light gray border */
+  --input: #F5F5F3;             /* Light input background */
+  --ring: #FF8C42;              /* Focus ring uses primary color */
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #2C3E50;
+  --sidebar-accent: #FF8C42;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #E8E8E6;
+  --sidebar-ring: #FF8C42;
 }
 
 .dark {
@@ -118,7 +119,12 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+    font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold text-foreground;
+    font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
@@ -130,6 +136,16 @@
   input[type="checkbox"]:not(:disabled),
   input[type="radio"]:not(:disabled) {
     @apply cursor-pointer;
+  }
+  
+  /* Warm Care Design - Card Shadow */
+  .card-shadow {
+    box-shadow: 0 4px 12px rgba(255, 140, 66, 0.08);
+  }
+  
+  /* Smooth transitions for warm interactions */
+  button, a, input, select, textarea {
+    @apply transition-all duration-200;
   }
 }
 
@@ -158,6 +174,36 @@
   .flex {
     min-height: 0;
     min-width: 0;
+  }
+  
+  /* Warm Care Design Components */
+  .warm-card {
+    @apply bg-white rounded-2xl p-4 shadow-md hover:shadow-lg transition-shadow duration-300;
+    box-shadow: 0 4px 12px rgba(255, 140, 66, 0.08);
+  }
+  
+  .warm-card:hover {
+    box-shadow: 0 8px 20px rgba(255, 140, 66, 0.12);
+  }
+  
+  .warm-button {
+    @apply bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+  
+  .warm-button-secondary {
+    @apply bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+  
+  .warm-badge {
+    @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold;
+  }
+  
+  .warm-badge-success {
+    @apply bg-green-100 text-green-700;
+  }
+  
+  .warm-badge-verified {
+    @apply bg-blue-100 text-blue-700;
   }
 
   @media (min-width: 640px) {
