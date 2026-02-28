@@ -1,6 +1,7 @@
 /**
  * Home Page - 亲家直聘首页
  * 展示推荐的子女资料卡片流，支持筛选和排序
+ * 用户发布的资料会优先显示在首页第一位
  * 
  * 设计理念：温暖关怀型现代主义
  * - 卡片流设计，每个卡片代表一个子女资料
@@ -10,10 +11,11 @@
  */
 
 import { useState, useMemo } from 'react';
-import { Heart, MapPin, Briefcase, BookOpen, CheckCircle, Filter } from 'lucide-react';
+import { Heart, MapPin, Briefcase, BookOpen, CheckCircle, Filter, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLocation } from 'wouter';
 import FilterPanel, { FilterOptions } from '@/components/FilterPanel';
+import { useData } from '@/contexts/DataContext';
 
 interface ProfileCard {
   id: string;
@@ -29,7 +31,7 @@ interface ProfileCard {
   profileImage: string;
 }
 
-// Mock data for MVP - 扩展数据集以便测试筛选
+// Mock data for MVP
 const mockProfiles: ProfileCard[] = [
   {
     id: '1',
@@ -126,6 +128,7 @@ const mockProfiles: ProfileCard[] = [
 
 export default function Home() {
   const [, setLocation] = useLocation();
+  const { userProfile } = useData();
   const [likedProfiles, setLikedProfiles] = useState<Set<string>>(new Set());
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState<FilterOptions>({
@@ -139,7 +142,27 @@ export default function Home() {
 
   // 筛选和排序逻辑
   const filteredProfiles = useMemo(() => {
-    let result = mockProfiles.filter(profile => {
+    let result: ProfileCard[] = [];
+
+    // 如果用户有发布的资料，将其放在最前面
+    if (userProfile) {
+      result.push({
+        id: userProfile.id,
+        childName: userProfile.childName,
+        childAge: userProfile.childAge,
+        childGender: userProfile.childGender,
+        childEducation: userProfile.childEducation,
+        childOccupation: userProfile.childOccupation,
+        childLocation: userProfile.childLocation,
+        childDescription: userProfile.childDescription,
+        parentName: userProfile.parentName,
+        isVerified: userProfile.isVerified,
+        profileImage: userProfile.profileImage
+      });
+    }
+
+    // 添加其他资料
+    const otherProfiles = mockProfiles.filter(profile => {
       // 年龄筛选
       if (profile.childAge < filters.ageMin || profile.childAge > filters.ageMax) {
         return false;
@@ -163,13 +186,14 @@ export default function Home() {
       return true;
     });
 
-    // 排序
+    // 排序（用户资料始终在最前面）
     if (sortBy === 'age') {
-      result.sort((a, b) => a.childAge - b.childAge);
+      otherProfiles.sort((a, b) => a.childAge - b.childAge);
     }
 
+    result = result.concat(otherProfiles);
     return result;
-  }, [filters, sortBy]);
+  }, [filters, sortBy, userProfile]);
 
   const toggleLike = (id: string) => {
     const newLiked = new Set(likedProfiles);
@@ -259,103 +283,142 @@ export default function Home() {
       {/* Profile Cards Stream */}
       <div className="px-4 py-4 space-y-4">
         {filteredProfiles.length > 0 ? (
-          filteredProfiles.map((profile, index) => (
-            <div
-              key={profile.id}
-              className="warm-card cursor-pointer hover:scale-105 transition-transform duration-300 animate-in fade-in slide-in-from-bottom-4"
-              style={{ animationDelay: `${index * 100}ms` }}
-              onClick={() => setLocation(`/profile/${profile.id}`)}
-            >
-              {/* Profile Image */}
-              <div className="relative mb-4 -mx-4 -mt-4 rounded-t-2xl overflow-hidden h-40 bg-gradient-to-br from-[#FF8C42] to-[#FF7A2F]">
-                <img
-                  src={profile.profileImage}
-                  alt={profile.childName}
-                  className="w-full h-full object-cover"
-                />
-                {profile.isVerified && (
-                  <div className="absolute top-3 right-3 warm-badge warm-badge-verified flex items-center gap-1">
-                    <CheckCircle size={14} />
-                    <span>已认证</span>
+          filteredProfiles.map((profile, index) => {
+            const isUserProfile = userProfile && profile.id === userProfile.id;
+            return (
+              <div
+                key={profile.id}
+                className={`warm-card cursor-pointer hover:scale-105 transition-transform duration-300 animate-in fade-in slide-in-from-bottom-4 ${
+                  isUserProfile ? 'ring-2 ring-[#FF8C42] shadow-lg' : ''
+                }`}
+                style={{ animationDelay: `${index * 100}ms` }}
+                onClick={() => setLocation(`/profile/${profile.id}`)}
+              >
+                {/* User Profile Badge */}
+                {isUserProfile && (
+                  <div className="absolute top-4 left-4 z-20 bg-[#FF8C42] text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                    <Sparkles size={14} />
+                    我的资料
                   </div>
                 )}
-              </div>
 
-              {/* Profile Info */}
-              <div className="px-4 pb-4">
-                {/* Name and Age */}
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-xl font-bold text-gray-800">
-                    {profile.childName}
-                    <span className="text-lg ml-2 text-gray-600">{profile.childAge}岁</span>
-                  </h3>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleLike(profile.id);
-                    }}
-                    className="p-2 rounded-full hover:bg-red-50 transition-colors"
-                  >
-                    <Heart
-                      size={24}
-                      className={likedProfiles.has(profile.id) ? 'fill-red-500 text-red-500' : 'text-gray-300'}
-                    />
-                  </button>
+                {/* Profile Image */}
+                <div className="relative mb-4 -mx-4 -mt-4 rounded-t-2xl overflow-hidden h-40 bg-gradient-to-br from-[#FF8C42] to-[#FF7A2F]">
+                  <img
+                    src={profile.profileImage}
+                    alt={profile.childName}
+                    className="w-full h-full object-cover"
+                  />
+                  {profile.isVerified && (
+                    <div className="absolute top-3 right-3 warm-badge warm-badge-verified flex items-center gap-1">
+                      <CheckCircle size={14} />
+                      <span>已认证</span>
+                    </div>
+                  )}
                 </div>
 
-                {/* Parent Info */}
-                <div className="text-sm text-gray-600 mb-3">
-                  <span className="font-semibold">{profile.parentName}</span> 的孩子
-                </div>
-
-                {/* Key Info Grid */}
-                <div className="grid grid-cols-2 gap-2 mb-4">
-                  <div className="flex items-center gap-2 text-sm text-gray-700 bg-[#F5F5F3] px-3 py-2 rounded-lg">
-                    <MapPin size={16} className="text-[#FF8C42]" />
-                    <span>{profile.childLocation}</span>
+                {/* Profile Info */}
+                <div className="px-4 pb-4">
+                  {/* Name and Age */}
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-xl font-bold text-gray-800">
+                      {profile.childName}
+                      <span className="text-lg ml-2 text-gray-600">{profile.childAge}岁</span>
+                    </h3>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleLike(profile.id);
+                      }}
+                      className="p-2 rounded-full hover:bg-red-50 transition-colors"
+                    >
+                      <Heart
+                        size={24}
+                        className={likedProfiles.has(profile.id) ? 'fill-red-500 text-red-500' : 'text-gray-300'}
+                      />
+                    </button>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-700 bg-[#F5F5F3] px-3 py-2 rounded-lg">
-                    <BookOpen size={16} className="text-[#4A90E2]" />
-                    <span>{profile.childEducation}</span>
+
+                  {/* Parent Info */}
+                  <div className="text-sm text-gray-600 mb-3">
+                    <span className="font-semibold">{profile.parentName}</span> 的孩子
+                  </div>
+
+                  {/* Key Info Grid */}
+                  <div className="grid grid-cols-2 gap-2 mb-4">
+                    <div className="flex items-center gap-2 text-sm text-gray-700 bg-[#F5F5F3] px-3 py-2 rounded-lg">
+                      <MapPin size={16} className="text-[#FF8C42]" />
+                      <span>{profile.childLocation}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-700 bg-[#F5F5F3] px-3 py-2 rounded-lg">
+                      <BookOpen size={16} className="text-[#4A90E2]" />
+                      <span>{profile.childEducation}</span>
+                    </div>
+                  </div>
+
+                  {/* Occupation */}
+                  <div className="flex items-center gap-2 text-sm text-gray-700 bg-[#F5F5F3] px-3 py-2 rounded-lg mb-4">
+                    <Briefcase size={16} className="text-[#52C41A]" />
+                    <span>{profile.childOccupation}</span>
+                  </div>
+
+                  {/* Description */}
+                  <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                    {profile.childDescription}
+                  </p>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3">
+                    {isUserProfile ? (
+                      <>
+                        <Button
+                          variant="outline"
+                          className="flex-1 border-[#FF8C42] text-[#FF8C42] hover:bg-[#FF8C42] hover:text-white"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setLocation('/me');
+                          }}
+                        >
+                          编辑资料
+                        </Button>
+                        <Button
+                          className="flex-1 bg-[#FF8C42] hover:bg-[#FF7A2F] text-white"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setLocation('/me');
+                          }}
+                        >
+                          查看联系
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          variant="outline"
+                          className="flex-1 border-[#FF8C42] text-[#FF8C42] hover:bg-[#FF8C42] hover:text-white"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setLocation(`/profile/${profile.id}`);
+                          }}
+                        >
+                          查看详情
+                        </Button>
+                        <Button
+                          className="flex-1 bg-[#FF8C42] hover:bg-[#FF7A2F] text-white"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setLocation(`/contact/${profile.id}`);
+                          }}
+                        >
+                          申请联系
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
-
-                {/* Occupation */}
-                <div className="flex items-center gap-2 text-sm text-gray-700 bg-[#F5F5F3] px-3 py-2 rounded-lg mb-4">
-                  <Briefcase size={16} className="text-[#52C41A]" />
-                  <span>{profile.childOccupation}</span>
-                </div>
-
-                {/* Description */}
-                <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                  {profile.childDescription}
-                </p>
-
-                {/* Action Buttons */}
-                <div className="flex gap-3">
-                  <Button
-                    variant="outline"
-                    className="flex-1 border-[#FF8C42] text-[#FF8C42] hover:bg-[#FF8C42] hover:text-white"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setLocation(`/profile/${profile.id}`);
-                    }}
-                  >
-                    查看详情
-                  </Button>
-                  <Button
-                    className="flex-1 bg-[#FF8C42] hover:bg-[#FF7A2F] text-white"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setLocation(`/contact/${profile.id}`);
-                    }}
-                  >
-                    申请联系
-                  </Button>
-                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         ) : (
           <div className="text-center py-12">
             <div className="text-4xl mb-4">🔍</div>
@@ -372,7 +435,7 @@ export default function Home() {
       </div>
 
       {/* CTA Section */}
-      {filteredProfiles.length > 0 && (
+      {filteredProfiles.length > 0 && !userProfile && (
         <div className="px-4 py-6 text-center">
           <Button
             className="w-full bg-[#4A90E2] hover:bg-[#3A7FD2] text-white py-3 text-lg"

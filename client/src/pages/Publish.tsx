@@ -6,6 +6,7 @@
  * - 清晰的表单结构
  * - 逐步引导用户填写
  * - 友好的错误提示
+ * - 发布后立即在首页显示
  */
 
 import { useState } from 'react';
@@ -16,9 +17,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { useData } from '@/contexts/DataContext';
 
 export default function Publish() {
   const [, setLocation] = useLocation();
+  const { publishProfile } = useData();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     childName: '',
@@ -55,9 +58,27 @@ export default function Publish() {
     
     // Simulate API call
     setTimeout(() => {
+      // Save to local storage via DataContext
+      publishProfile({
+        childName: formData.childName,
+        childAge: parseInt(formData.childAge),
+        childGender: formData.childGender as 'male' | 'female',
+        childEducation: formData.childEducation,
+        childOccupation: formData.childOccupation,
+        childLocation: formData.childLocation,
+        childDescription: formData.childDescription,
+        parentName: formData.parentName,
+        parentPhone: formData.parentPhone,
+        parentLocation: formData.parentLocation
+      });
+
       setIsSubmitting(false);
       toast.success('资料发布成功！');
-      setLocation('/');
+      
+      // Redirect to home after a short delay
+      setTimeout(() => {
+        setLocation('/');
+      }, 500);
     }, 1500);
   };
 
@@ -247,7 +268,7 @@ export default function Publish() {
             <CheckCircle size={20} className="text-blue-600 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-blue-800">
               <p className="font-semibold mb-1">提示</p>
-              <p>您的信息将被严格保密，仅用于配对。我们承诺不会主动向任何人披露您的联系方式。</p>
+              <p>您的信息将被严格保密，仅用于配对。发布后您将在首页看到自己的资料！</p>
             </div>
           </div>
         </div>
