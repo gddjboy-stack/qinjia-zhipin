@@ -1,6 +1,6 @@
 /**
  * Data Context - 全局数据管理
- * 使用 localStorage 保存用户发布的资料信息
+ * 使用 localStorage 保存用户发布的资料信息和未读消息
  */
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
@@ -22,31 +22,64 @@ export interface UserPublishedProfile {
   publishedAt: string;
 }
 
+export interface ContactRequest {
+  id: string;
+  fromProfileId: string;
+  fromParentName: string;
+  fromChildName: string;
+  message: string;
+  timestamp: string;
+  isRead: boolean;
+}
+
 interface DataContextType {
   userProfile: UserPublishedProfile | null;
   publishProfile: (profile: Omit<UserPublishedProfile, 'id' | 'publishedAt' | 'isVerified' | 'profileImage'>) => void;
   clearProfile: () => void;
   hasPublishedProfile: boolean;
+  contactRequests: ContactRequest[];
+  addContactRequest: (request: Omit<ContactRequest, 'id' | 'timestamp' | 'isRead'>) => void;
+  markAsRead: (requestId: string) => void;
+  markAllAsRead: () => void;
+  unreadCount: number;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'qinjia_user_profile';
+const PROFILE_STORAGE_KEY = 'qinjia_user_profile';
+const CONTACTS_STORAGE_KEY = 'qinjia_contact_requests';
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserPublishedProfile | null>(null);
   const [hasPublishedProfile, setHasPublishedProfile] = useState(false);
+  const [contactRequests, setContactRequests] = useState<ContactRequest[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // 从 localStorage 加载数据
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
+    // 加载用户资料
+    const storedProfile = localStorage.getItem(PROFILE_STORAGE_KEY);
+    if (storedProfile) {
       try {
-        const profile = JSON.parse(stored);
+        const profile = JSON.parse(storedProfile);
         setUserProfile(profile);
         setHasPublishedProfile(true);
       } catch (error) {
         console.error('Failed to parse stored profile:', error);
+      }
+    }
+
+    // 加载联系申请
+    const storedContacts = localStorage.getItem(CONTACTS_STORAGE_KEY);
+    if (storedContacts) {
+      try {
+        const contacts = JSON.parse(storedContacts);
+        setContactRequests(contacts);
+        // 计算未读数量
+        const unread = contacts.filter((c: ContactRequest) => !c.isRead).length;
+        setUnreadCount(unread);
+      } catch (error) {
+        console.error('Failed to parse stored contacts:', error);
       }
     }
   }, []);
@@ -62,13 +95,43 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     setUserProfile(newProfile);
     setHasPublishedProfile(true);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newProfile));
+    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(newProfile));
   };
 
   const clearProfile = () => {
     setUserProfile(null);
     setHasPublishedProfile(false);
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(PROFILE_STORAGE_KEY);
+  };
+
+  const addContactRequest = (request: Omit<ContactRequest, 'id' | 'timestamp' | 'isRead'>) => {
+    const newRequest: ContactRequest = {
+      ...request,
+      id: `contact_${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      isRead: false
+    };
+
+    const updatedRequests = [newRequest, ...contactRequests];
+    setContactRequests(updatedRequests);
+    setUnreadCount(prev => prev + 1);
+    localStorage.setItem(CONTACTS_STORAGE_KEY, JSON.stringify(updatedRequests));
+  };
+
+  const markAsRead = (requestId: string) => {
+    const updatedRequests = contactRequests.map(req => 
+      req.id === requestId ? { ...req, isRead: true } : req
+    );
+    setContactRequests(updatedRequests);
+    setUnreadCount(prev => Math.max(0, prev - 1));
+    localStorage.setItem(CONTACTS_STORAGE_KEY, JSON.stringify(updatedRequests));
+  };
+
+  const markAllAsRead = () => {
+    const updatedRequests = contactRequests.map(req => ({ ...req, isRead: true }));
+    setContactRequests(updatedRequests);
+    setUnreadCount(0);
+    localStorage.setItem(CONTACTS_STORAGE_KEY, JSON.stringify(updatedRequests));
   };
 
   return (
@@ -77,7 +140,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         userProfile,
         publishProfile,
         clearProfile,
-        hasPublishedProfile
+        hasPublishedProfile,
+        contactRequests,
+        addContactRequest,
+        markAsRead,
+        markAllAsRead,
+        unreadCount
       }}
     >
       {children}

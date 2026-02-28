@@ -11,7 +11,7 @@
  */
 
 import { useState, useMemo } from 'react';
-import { Heart, MapPin, Briefcase, BookOpen, CheckCircle, Filter, Sparkles } from 'lucide-react';
+import { Heart, MapPin, Briefcase, BookOpen, CheckCircle, Filter, Sparkles, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLocation } from 'wouter';
 import FilterPanel, { FilterOptions } from '@/components/FilterPanel';
@@ -128,7 +128,7 @@ const mockProfiles: ProfileCard[] = [
 
 export default function Home() {
   const [, setLocation] = useLocation();
-  const { userProfile } = useData();
+  const { userProfile, unreadCount } = useData();
   const [likedProfiles, setLikedProfiles] = useState<Set<string>>(new Set());
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState<FilterOptions>({
@@ -296,9 +296,17 @@ export default function Home() {
               >
                 {/* User Profile Badge */}
                 {isUserProfile && (
-                  <div className="absolute top-4 left-4 z-20 bg-[#FF8C42] text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-                    <Sparkles size={14} />
-                    我的资料
+                  <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
+                    <div className="bg-[#FF8C42] text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                      <Sparkles size={14} />
+                      我的资料
+                    </div>
+                    {unreadCount > 0 && (
+                      <div className="bg-red-500 text-white px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 animate-pulse">
+                        <Bell size={14} />
+                        {unreadCount}
+                      </div>
+                    )}
                   </div>
                 )}
 

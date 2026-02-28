@@ -1,40 +1,19 @@
 /**
  * Profile Page - 个人中心
  * 用户可以管理自己的信息和已联系的亲家
+ * 显示收到的联系申请，支持标记为已读
  */
 
 import { useLocation } from 'wouter';
-import { LogOut, Edit2, Heart, MessageCircle, Settings } from 'lucide-react';
+import { LogOut, Edit2, Heart, MessageCircle, Settings, Bell, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
-
-interface ContactItem {
-  id: string;
-  childName: string;
-  parentName: string;
-  status: 'pending' | 'accepted';
-  timestamp: string;
-}
-
-const mockContacts: ContactItem[] = [
-  {
-    id: '1',
-    childName: '王芳',
-    parentName: '王先生',
-    status: 'pending',
-    timestamp: '2小时前'
-  },
-  {
-    id: '2',
-    childName: '张浩',
-    parentName: '张女士',
-    status: 'accepted',
-    timestamp: '1天前'
-  }
-];
+import { useState, useEffect } from 'react';
+import { useData } from '@/contexts/DataContext';
+import { toast } from 'sonner';
 
 export default function Profile() {
   const [, setLocation] = useLocation();
+  const { userProfile, contactRequests, markAllAsRead, unreadCount } = useData();
   const [userInfo] = useState({
     name: '李女士',
     phone: '138****1234',
@@ -42,6 +21,28 @@ export default function Profile() {
     childAge: 32,
     isVerified: true
   });
+
+  // 当用户进入个人中心时，标记所有消息为已读
+  useEffect(() => {
+    if (unreadCount > 0) {
+      markAllAsRead();
+    }
+  }, []);
+
+  const formatTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return '刚刚';
+    if (minutes < 60) return `${minutes}分钟前`;
+    if (hours < 24) return `${hours}小时前`;
+    if (days < 7) return `${days}天前`;
+    return date.toLocaleDateString();
+  };
 
   return (
     <div className="min-h-screen bg-[#FAFAF8] pb-20">
@@ -97,33 +98,52 @@ export default function Profile() {
         </Button>
       </div>
 
-      {/* Contacts Section */}
+      {/* Contact Requests Section */}
       <div className="px-4 mb-6">
         <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
           <MessageCircle size={20} className="text-[#FF8C42]" />
-          已联系的亲家 ({mockContacts.length})
+          收到的联系申请 ({contactRequests.length})
         </h3>
 
-        <div className="space-y-3">
-          {mockContacts.map((contact) => (
-            <div key={contact.id} className="warm-card">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <h4 className="font-bold text-gray-800">{contact.childName}</h4>
-                  <p className="text-sm text-gray-600">{contact.parentName}</p>
+        {contactRequests.length > 0 ? (
+          <div className="space-y-3">
+            {contactRequests.map((request) => (
+              <div key={request.id} className="warm-card border-l-4 border-[#FF8C42]">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <h4 className="font-bold text-gray-800">{request.fromChildName}</h4>
+                    <p className="text-sm text-gray-600">{request.fromParentName}的孩子</p>
+                  </div>
+                  {!request.isRead && (
+                    <span className="inline-block w-2 h-2 rounded-full bg-red-500 mt-2"></span>
+                  )}
                 </div>
-                <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                  contact.status === 'accepted'
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-yellow-100 text-yellow-700'
-                }`}>
-                  {contact.status === 'accepted' ? '已接受' : '待回复'}
-                </span>
+                <p className="text-sm text-gray-700 bg-[#F5F5F3] p-3 rounded-lg mb-3 line-clamp-3">
+                  {request.message}
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-500">{formatTime(request.timestamp)}</span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-[#FF8C42] text-[#FF8C42] hover:bg-[#FF8C42] hover:text-white text-xs"
+                    onClick={() => {
+                      toast.success('已复制联系信息');
+                    }}
+                  >
+                    查看详情
+                  </Button>
+                </div>
               </div>
-              <p className="text-xs text-gray-500">{contact.timestamp}</p>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="warm-card text-center py-8">
+            <Bell size={32} className="mx-auto text-gray-300 mb-3" />
+            <p className="text-gray-600">暂无联系申请</p>
+            <p className="text-sm text-gray-500 mt-2">发布资料后，感兴趣的家长会向您发送申请</p>
+          </div>
+        )}
       </div>
 
       {/* Settings Section */}

@@ -1,6 +1,7 @@
 /**
  * Contact Page - 申请联系页
  * 用户可以在此申请与目标用户联系
+ * 申请提交后会保存到全局状态，并在首页显示未读提醒
  */
 
 import { useParams } from 'wouter';
@@ -10,12 +11,27 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { useData } from '@/contexts/DataContext';
+
+// Mock profile data to get contact info
+const mockProfiles: Record<string, { childName: string; parentName: string }> = {
+  '1': { childName: '李明', parentName: '李女士' },
+  '2': { childName: '王芳', parentName: '王先生' },
+  '3': { childName: '张浩', parentName: '张女士' },
+  '4': { childName: '陈思', parentName: '陈先生' },
+  '5': { childName: '刘军', parentName: '刘女士' },
+  '6': { childName: '周丽', parentName: '周女士' },
+  '7': { childName: '吴涛', parentName: '吴先生' }
+};
 
 export default function Contact() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
+  const { addContactRequest, userProfile } = useData();
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const targetProfile = mockProfiles[id || ''] || { childName: '用户', parentName: '家长' };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,13 +41,32 @@ export default function Contact() {
       return;
     }
 
+    // 如果用户没有发布资料，无法接收申请
+    if (!userProfile) {
+      toast.error('请先发布您的资料后再申请联系');
+      setLocation('/publish');
+      return;
+    }
+
     setIsSubmitting(true);
     
     // Simulate API call
     setTimeout(() => {
+      // 添加联系申请到全局状态
+      addContactRequest({
+        fromProfileId: id || '',
+        fromParentName: targetProfile.parentName,
+        fromChildName: targetProfile.childName,
+        message: message
+      });
+
       setIsSubmitting(false);
       toast.success('申请已发送！对方家长将尽快与您联系');
-      setLocation('/');
+      
+      // 延迟后返回首页
+      setTimeout(() => {
+        setLocation('/');
+      }, 500);
     }, 1500);
   };
 
@@ -61,6 +96,14 @@ export default function Contact() {
           </div>
         </div>
 
+        {/* Target Profile Info */}
+        <div className="warm-card bg-blue-50 border border-blue-200">
+          <div className="text-sm text-blue-800">
+            <p className="font-semibold mb-2">您要申请联系：</p>
+            <p><span className="font-bold">{targetProfile.childName}</span> ({targetProfile.parentName}的孩子)</p>
+          </div>
+        </div>
+
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="warm-card">
@@ -79,9 +122,9 @@ export default function Contact() {
           </div>
 
           {/* Privacy Notice */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="text-xs text-blue-800">
-              <p className="font-semibold mb-1">隐私保护</p>
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="text-xs text-green-800">
+              <p className="font-semibold mb-1">✓ 隐私保护</p>
               <p>您的信息将被安全保存，仅用于此次配对。我们不会将您的信息用于其他目的。</p>
             </div>
           </div>
