@@ -1,15 +1,14 @@
 /**
  * Profile Page - 个人中心
- * 用户可以管理自己的信息和已联系的亲家
- * 显示收到的联系申请，支持标记为已读
+ * 显示用户发布的资料信息，或在未发布时显示空白提示
+ * 与Publish页面联动，保持数据一致
  */
 
 import { useLocation } from 'wouter';
-import { LogOut, Edit2, Heart, MessageCircle, Settings, Bell, CheckCircle } from 'lucide-react';
+import { LogOut, Edit2, Heart, MessageCircle, Settings, Bell, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 import { useData } from '@/contexts/DataContext';
-import { toast } from 'sonner';
 
 export default function Profile() {
   const [, setLocation] = useLocation();
@@ -44,6 +43,47 @@ export default function Profile() {
     return date.toLocaleDateString();
   };
 
+  // 如果用户未发布过资料，显示空白提示
+  if (!userProfile) {
+    return (
+      <div className="min-h-screen bg-[#FAFAF8] pb-20 flex flex-col">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-[#FF8C42] to-[#FF7A2F] text-white px-4 py-6 text-center">
+          <h1 className="text-2xl font-bold">个人中心</h1>
+        </div>
+
+        {/* Empty State */}
+        <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
+          <div className="text-6xl mb-6">📋</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-3 text-center">还未发布资料</h2>
+          <p className="text-gray-600 text-center mb-8 max-w-xs">
+            发布您孩子的资料，让感兴趣的家长主动联系您
+          </p>
+          <Button
+            className="bg-[#FF8C42] hover:bg-[#FF7A2F] text-white px-8 py-3 text-lg flex items-center gap-2"
+            onClick={() => setLocation('/publish')}
+          >
+            <Plus size={20} />
+            发布资料
+          </Button>
+        </div>
+
+        {/* CTA Section */}
+        <div className="px-4 pb-6 space-y-3">
+          <Button
+            variant="outline"
+            className="w-full border-[#FF8C42] text-[#FF8C42] hover:bg-[#FF8C42] hover:text-white flex items-center justify-center gap-2"
+            onClick={() => setLocation('/')}
+          >
+            <Heart size={18} />
+            浏览推荐
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // 用户已发布资料，显示详细信息
   return (
     <div className="min-h-screen bg-[#FAFAF8] pb-20">
       {/* Header */}
@@ -55,26 +95,49 @@ export default function Profile() {
       <div className="mx-4 -mt-8 relative z-10 warm-card mb-6">
         <div className="flex items-center gap-4 mb-4">
           <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#FF8C42] to-[#FF7A2F] flex items-center justify-center text-white text-2xl font-bold">
-            {userInfo.name.charAt(0)}
+            {userProfile.parentName.charAt(0)}
           </div>
           <div className="flex-1">
-            <h2 className="text-lg font-bold text-gray-800">{userInfo.name}</h2>
-            <p className="text-sm text-gray-600">{userInfo.childName}的家长</p>
+            <h2 className="text-lg font-bold text-gray-800">{userProfile.parentName}</h2>
+            <p className="text-sm text-gray-600">{userProfile.childName}的家长</p>
           </div>
         </div>
 
         <div className="space-y-2 border-t border-[#E8E8E6] pt-4">
           <div className="flex justify-between items-center">
             <span className="text-gray-600">联系电话</span>
-            <span className="font-semibold text-gray-800">{userInfo.phone}</span>
+            <span className="font-semibold text-gray-800">{userProfile.parentPhone}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-gray-600">孩子</span>
-            <span className="font-semibold text-gray-800">{userInfo.childName} ({userInfo.childAge}岁)</span>
+            <span className="font-semibold text-gray-800">{userProfile.childName} ({userProfile.childAge}岁)</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600">所在城市</span>
+            <span className="font-semibold text-gray-800">{userProfile.childLocation || userProfile.parentLocation}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-gray-600">认证状态</span>
             <span className="warm-badge warm-badge-verified">已认证</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Child Details */}
+      <div className="px-4 mb-6">
+        <h3 className="text-lg font-bold text-gray-800 mb-4">孩子详情</h3>
+        <div className="warm-card space-y-4">
+          <div>
+            <label className="text-sm text-gray-600">学历</label>
+            <p className="font-semibold text-gray-800">{userProfile.childEducation}</p>
+          </div>
+          <div>
+            <label className="text-sm text-gray-600">职业</label>
+            <p className="font-semibold text-gray-800">{userProfile.childOccupation}</p>
+          </div>
+          <div>
+            <label className="text-sm text-gray-600">个人介绍</label>
+            <p className="text-gray-700 leading-relaxed">{userProfile.childDescription}</p>
           </div>
         </div>
       </div>
@@ -128,10 +191,12 @@ export default function Profile() {
                     variant="outline"
                     className="border-[#FF8C42] text-[#FF8C42] hover:bg-[#FF8C42] hover:text-white text-xs"
                     onClick={() => {
-                      toast.success('已复制联系信息');
+                      // Copy contact info
+                      const contactInfo = `${request.fromParentName}\n${request.message}`;
+                      navigator.clipboard.writeText(contactInfo);
                     }}
                   >
-                    查看详情
+                    复制信息
                   </Button>
                 </div>
               </div>
@@ -141,7 +206,7 @@ export default function Profile() {
           <div className="warm-card text-center py-8">
             <Bell size={32} className="mx-auto text-gray-300 mb-3" />
             <p className="text-gray-600">暂无联系申请</p>
-            <p className="text-sm text-gray-500 mt-2">发布资料后，感兴趣的家长会向您发送申请</p>
+            <p className="text-sm text-gray-500 mt-2">感兴趣的家长会向您发送申请</p>
           </div>
         )}
       </div>
