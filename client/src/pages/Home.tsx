@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { useLocation } from 'wouter';
 import FilterPanel, { FilterOptions } from '@/components/FilterPanel';
 import VerificationModal from '@/components/VerificationModal';
-import ShareModal from '@/components/ShareModal';
+
 import { useData } from '@/contexts/DataContext';
 
 interface ProfileCard {
@@ -208,9 +208,58 @@ export default function Home() {
   });
   const [sortBy, setSortBy] = useState<'newest' | 'age'>('newest');
   const [verificationModal, setVerificationModal] = useState<{ isOpen: boolean; profileId?: string }>({ isOpen: false });
-  const [shareModal, setShareModal] = useState<{ isOpen: boolean; profile?: ProfileCard }>({ isOpen: false });
 
-  // 筛选和排序逻辑
+  // 检查是否在微信中
+  const isInWeChat = () => {
+    return /micromessenger/i.test(navigator.userAgent);
+  };
+
+  // 处理邀请分享
+  const handleInviteShare = (profile: ProfileCard) => {
+    if (!isInWeChat()) {
+      alert('💵 请在微信中打开此链接，才能分享给望友');
+      return;
+    }
+
+    // 检查微信 JS-SDK 是否已加载
+    if (typeof (window as any).wx === 'undefined') {
+      alert('微信分享功能加载中，请稍后再试');
+      return;
+    }
+
+    const wx = (window as any).wx;
+    const genderText = profile.childGender === 'male' ? '兒子' : '女儿';
+    const shareTitle = `我在亲家直聘上发布了我的${genderText}的资料`;
+    const shareDesc = '我在亲家直聘上发布了我的孩子的资料，请帮我推荐给合适的人。';
+
+    // 调用微信分享接口
+    wx.ready(() => {
+      wx.onMenuShareAppMessage({
+        title: shareTitle,
+        desc: shareDesc,
+        link: window.location.href,
+        imgUrl: profile.profileImage || 'https://via.placeholder.com/200',
+        type: 'link',
+        dataUrl: '',
+        success: () => {
+          console.log('分享成功');
+        },
+        cancel: () => {
+          console.log('分享取消');
+        }
+      });
+    });
+
+    // 触发分享按钮
+    wx.showMenuItems({
+      menuList: ['menuItem.share.appMessage'],
+      success: () => {
+        console.log('分享按钮已打开');
+      }
+    });
+  };
+
+  // 筛选和排序逻辑辑
   const filteredProfiles = useMemo(() => {
     let result: ProfileCard[] = [];
 
@@ -512,12 +561,12 @@ export default function Home() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setShareModal({ isOpen: true, profile });
+                        handleInviteShare(profile);
                       }}
                       className="flex-1 py-2 px-3 bg-[#F5F5F3] hover:bg-blue-50 text-gray-700 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
                     >
                       <Share2 size={18} />
-                      分享
+                      邀请
                     </button>
                     <button
                       onClick={(e) => {
@@ -568,14 +617,6 @@ export default function Home() {
         />
       )}
 
-      {/* Share Modal */}
-      {shareModal.profile && (
-        <ShareModal
-          isOpen={shareModal.isOpen}
-          onClose={() => setShareModal({ isOpen: false })}
-          profile={shareModal.profile}
-        />
-      )}
     </div>
   );
 }
