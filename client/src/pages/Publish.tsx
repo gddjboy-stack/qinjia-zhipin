@@ -1,17 +1,14 @@
 /**
  * Publish Page - 发布/编辑子女资料页
- * 统一的资料管理中心，支持创建新资料和编辑已发布资料
+ * 按父母视角重构，突出"硬通货"信息
  * 
- * 设计理念：温暖关怀型现代主义
- * - 清晰的表单结构
- * - 逐步引导用户填写
- * - 友好的错误提示
- * - 发布/更新后立即在首页显示
+ * 必填项（前6个）：相片、年龄、学历、职业、现在工作地、有无住房
+ * 选填项：有无车、年收入范围、籍贯、属相、个人介绍
  */
 
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { ArrowLeft, CheckCircle, Trash2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Trash2, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -19,17 +16,27 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { useData } from '@/contexts/DataContext';
 
+const ZODIAC_SIGNS = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪'];
+const INCOME_RANGES = ['20万以下', '20-30万', '30-50万', '50-80万', '80-100万', '100万以上', '不便透露'];
+
 export default function Publish() {
   const [, setLocation] = useLocation();
   const { userProfile, publishProfile, clearProfile } = useData();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [profileImage, setProfileImage] = useState<string>('');
   const [formData, setFormData] = useState({
     childName: '',
     childAge: '',
     childGender: '',
     childEducation: '',
     childOccupation: '',
+    workCity: '',
+    hasHousing: 'unknown',
+    hasCar: 'unknown',
+    annualIncome: '',
+    nativePlace: '',
+    zodiacSign: '',
     childLocation: '',
     childDescription: '',
     parentName: '',
@@ -46,12 +53,19 @@ export default function Publish() {
         childGender: userProfile.childGender,
         childEducation: userProfile.childEducation,
         childOccupation: userProfile.childOccupation,
+        workCity: userProfile.workCity,
+        hasHousing: userProfile.hasHousing,
+        hasCar: userProfile.hasCar,
+        annualIncome: userProfile.annualIncome,
+        nativePlace: userProfile.nativePlace,
+        zodiacSign: userProfile.zodiacSign,
         childLocation: userProfile.childLocation,
         childDescription: userProfile.childDescription,
         parentName: userProfile.parentName,
         parentPhone: userProfile.parentPhone,
         parentLocation: userProfile.parentLocation
       });
+      setProfileImage(userProfile.profileImage);
       setIsEditing(true);
     }
   }, [userProfile]);
@@ -65,12 +79,43 @@ export default function Publish() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // 检查文件大小（限制在2MB以内）
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error('图片大小不能超过2MB');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64String = event.target?.result as string;
+        setProfileImage(base64String);
+        toast.success('图片上传成功');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setProfileImage('');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Basic validation
-    if (!formData.childName || !formData.childAge || !formData.childGender || !formData.parentName || !formData.parentPhone) {
+    // 验证必填项（前6个）
+    if (!profileImage) {
+      toast.error('请上传相片');
+      return;
+    }
+    if (!formData.childAge || !formData.childEducation || !formData.childOccupation || !formData.workCity || !formData.hasHousing) {
       toast.error('请填写所有必填项');
+      return;
+    }
+    if (!formData.parentName || !formData.parentPhone) {
+      toast.error('请填写您的信息');
       return;
     }
 
@@ -86,10 +131,17 @@ export default function Publish() {
         childEducation: formData.childEducation,
         childOccupation: formData.childOccupation,
         childLocation: formData.childLocation,
+        workCity: formData.workCity,
+        hasHousing: formData.hasHousing as 'yes' | 'no' | 'unknown',
+        hasCar: formData.hasCar as 'yes' | 'no' | 'unknown',
+        annualIncome: formData.annualIncome,
+        nativePlace: formData.nativePlace,
+        zodiacSign: formData.zodiacSign,
         childDescription: formData.childDescription,
         parentName: formData.parentName,
         parentPhone: formData.parentPhone,
-        parentLocation: formData.parentLocation
+        parentLocation: formData.parentLocation,
+        profileImage: profileImage
       });
 
       setIsSubmitting(false);
@@ -111,12 +163,19 @@ export default function Publish() {
         childGender: '',
         childEducation: '',
         childOccupation: '',
+        workCity: '',
+        hasHousing: 'unknown',
+        hasCar: 'unknown',
+        annualIncome: '',
+        nativePlace: '',
+        zodiacSign: '',
         childLocation: '',
         childDescription: '',
         parentName: '',
         parentPhone: '',
         parentLocation: ''
       });
+      setProfileImage('');
       setIsEditing(false);
       toast.success('资料已删除');
     }
@@ -149,16 +208,55 @@ export default function Publish() {
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="px-4 py-6 space-y-6">
-        {/* Section 1: Child Info */}
+        {/* Section 1: Photo Upload - REQUIRED */}
         <div className="warm-card">
           <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <span className="w-6 h-6 rounded-full bg-[#FF8C42] text-white text-xs flex items-center justify-center font-bold">1</span>
-            孩子信息
+            <span className="w-6 h-6 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-bold">*</span>
+            孩子相片（必填）
+          </h2>
+
+          <div className="space-y-4">
+            {profileImage ? (
+              <div className="relative">
+                <img
+                  src={profileImage}
+                  alt="Profile"
+                  className="w-full h-48 object-cover rounded-lg"
+                />
+                <button
+                  type="button"
+                  onClick={handleRemoveImage}
+                  className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            ) : (
+              <label className="border-2 border-dashed border-[#FF8C42] rounded-lg p-8 text-center cursor-pointer hover:bg-orange-50 transition-colors">
+                <Upload size={32} className="mx-auto text-[#FF8C42] mb-2" />
+                <p className="text-gray-800 font-semibold mb-1">点击上传相片</p>
+                <p className="text-sm text-gray-600">支持 JPG、PNG 格式，不超过 2MB</p>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </label>
+            )}
+          </div>
+        </div>
+
+        {/* Section 2: Basic Info - REQUIRED */}
+        <div className="warm-card">
+          <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <span className="w-6 h-6 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-bold">*</span>
+            基本信息（必填）
           </h2>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-2">孩子姓名 *</label>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">孩子姓名</label>
               <Input
                 type="text"
                 name="childName"
@@ -185,7 +283,7 @@ export default function Publish() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-2">性别 *</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">性别</label>
                 <Select value={formData.childGender} onValueChange={(value) => handleSelectChange('childGender', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="选择性别" />
@@ -198,43 +296,126 @@ export default function Publish() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-2">学历</label>
-                <Select value={formData.childEducation} onValueChange={(value) => handleSelectChange('childEducation', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择学历" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="大专">大专</SelectItem>
-                    <SelectItem value="本科">本科</SelectItem>
-                    <SelectItem value="硕士">硕士</SelectItem>
-                    <SelectItem value="博士">博士</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-2">职业</label>
-                <Input
-                  type="text"
-                  name="childOccupation"
-                  placeholder="例如：软件工程师"
-                  value={formData.childOccupation}
-                  onChange={handleInputChange}
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">学历 *</label>
+              <Select value={formData.childEducation} onValueChange={(value) => handleSelectChange('childEducation', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择学历" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="高中及以下">高中及以下</SelectItem>
+                  <SelectItem value="大专">大专</SelectItem>
+                  <SelectItem value="本科">本科</SelectItem>
+                  <SelectItem value="硕士">硕士</SelectItem>
+                  <SelectItem value="博士">博士</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-2">所在城市</label>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">职业 *</label>
               <Input
                 type="text"
-                name="childLocation"
-                placeholder="例如：北京"
-                value={formData.childLocation}
+                name="childOccupation"
+                placeholder="例如：软件工程师"
+                value={formData.childOccupation}
                 onChange={handleInputChange}
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">现在工作地 *</label>
+              <Input
+                type="text"
+                name="workCity"
+                placeholder="例如：北京"
+                value={formData.workCity}
+                onChange={handleInputChange}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Section 3: Hard Assets - REQUIRED */}
+        <div className="warm-card border-l-4 border-red-500">
+          <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <span className="w-6 h-6 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-bold">*</span>
+            资产情况（必填）
+          </h2>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">有无住房 *</label>
+              <Select value={formData.hasHousing} onValueChange={(value) => handleSelectChange('hasHousing', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择住房情况" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="yes">有房</SelectItem>
+                  <SelectItem value="no">无房</SelectItem>
+                  <SelectItem value="unknown">不便透露</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">有无车</label>
+              <Select value={formData.hasCar} onValueChange={(value) => handleSelectChange('hasCar', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择车产情况" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="yes">有车</SelectItem>
+                  <SelectItem value="no">无车</SelectItem>
+                  <SelectItem value="unknown">不便透露</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">年收入范围</label>
+              <Select value={formData.annualIncome} onValueChange={(value) => handleSelectChange('annualIncome', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择年收入范围" />
+                </SelectTrigger>
+                <SelectContent>
+                  {INCOME_RANGES.map(range => (
+                    <SelectItem key={range} value={range}>{range}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+
+        {/* Section 4: Additional Info - OPTIONAL */}
+        <div className="warm-card">
+          <h2 className="text-lg font-bold text-gray-800 mb-4">其他信息（选填）</h2>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">籍贯</label>
+              <Input
+                type="text"
+                name="nativePlace"
+                placeholder="例如：山东"
+                value={formData.nativePlace}
+                onChange={handleInputChange}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">属相</label>
+              <Select value={formData.zodiacSign} onValueChange={(value) => handleSelectChange('zodiacSign', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择属相" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ZODIAC_SIGNS.map(sign => (
+                    <SelectItem key={sign} value={sign}>{sign}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
@@ -250,11 +431,11 @@ export default function Publish() {
           </div>
         </div>
 
-        {/* Section 2: Parent Info */}
+        {/* Section 5: Parent Info */}
         <div className="warm-card">
           <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <span className="w-6 h-6 rounded-full bg-[#FF8C42] text-white text-xs flex items-center justify-center font-bold">2</span>
-            您的信息
+            <span className="w-6 h-6 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-bold">*</span>
+            您的信息（必填）
           </h2>
 
           <div className="space-y-4">

@@ -1,6 +1,6 @@
 /**
  * Home Page - 亲家直聘首页
- * 展示推荐的子女资料卡片流，支持性别切换、筛选和排序
+ * 展示推荐的子女资料卡片流，按父母视角突出"硬通货"信息
  * 用户发布的资料会优先显示在首页第一位
  * 
  * 设计理念：温暖关怀型现代主义
@@ -11,7 +11,7 @@
  */
 
 import { useState, useMemo } from 'react';
-import { Heart, MapPin, Briefcase, BookOpen, CheckCircle, Filter, Sparkles, Bell } from 'lucide-react';
+import { Heart, MapPin, Briefcase, BookOpen, CheckCircle, Filter, Sparkles, Bell, Home as HomeIcon, Car } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLocation } from 'wouter';
 import FilterPanel, { FilterOptions } from '@/components/FilterPanel';
@@ -25,13 +25,19 @@ interface ProfileCard {
   childEducation: string;
   childOccupation: string;
   childLocation: string;
+  workCity: string;
+  hasHousing: 'yes' | 'no' | 'unknown';
+  hasCar: 'yes' | 'no' | 'unknown';
+  annualIncome: string;
+  nativePlace: string;
+  zodiacSign: string;
   childDescription: string;
   parentName: string;
   isVerified: boolean;
   profileImage: string;
 }
 
-// Mock data for MVP
+// Mock data for MVP - Updated with new fields
 const mockProfiles: ProfileCard[] = [
   {
     id: '1',
@@ -41,6 +47,12 @@ const mockProfiles: ProfileCard[] = [
     childEducation: '本科',
     childOccupation: '软件工程师',
     childLocation: '北京',
+    workCity: '北京',
+    hasHousing: 'yes',
+    hasCar: 'yes',
+    annualIncome: '50-80万',
+    nativePlace: '山东',
+    zodiacSign: '龙',
     childDescription: '性格开朗，喜欢运动和旅游，希望找到一个温柔体贴的女性。',
     parentName: '李女士',
     isVerified: true,
@@ -54,6 +66,12 @@ const mockProfiles: ProfileCard[] = [
     childEducation: '硕士',
     childOccupation: '医生',
     childLocation: '上海',
+    workCity: '上海',
+    hasHousing: 'yes',
+    hasCar: 'no',
+    annualIncome: '30-50万',
+    nativePlace: '江苏',
+    zodiacSign: '兔',
     childDescription: '温柔贤惠，家庭观念强，希望找到一个有责任心的男性。',
     parentName: '王先生',
     isVerified: true,
@@ -67,6 +85,12 @@ const mockProfiles: ProfileCard[] = [
     childEducation: '本科',
     childOccupation: '企业管理',
     childLocation: '深圳',
+    workCity: '深圳',
+    hasHousing: 'yes',
+    hasCar: 'yes',
+    annualIncome: '80-100万',
+    nativePlace: '湖北',
+    zodiacSign: '虎',
     childDescription: '成熟稳重，事业有成，寻找志同道合的伴侣。',
     parentName: '张女士',
     isVerified: false,
@@ -80,6 +104,12 @@ const mockProfiles: ProfileCard[] = [
     childEducation: '本科',
     childOccupation: '设计师',
     childLocation: '杭州',
+    workCity: '杭州',
+    hasHousing: 'no',
+    hasCar: 'no',
+    annualIncome: '20-30万',
+    nativePlace: '浙江',
+    zodiacSign: '马',
     childDescription: '创意十足，热爱生活，期待遇见有趣的灵魂。',
     parentName: '陈先生',
     isVerified: true,
@@ -93,6 +123,12 @@ const mockProfiles: ProfileCard[] = [
     childEducation: '硕士',
     childOccupation: '律师',
     childLocation: '北京',
+    workCity: '北京',
+    hasHousing: 'yes',
+    hasCar: 'yes',
+    annualIncome: '100万以上',
+    nativePlace: '北京',
+    zodiacSign: '蛇',
     childDescription: '专业素养高，生活品质讲究，寻找志同道合的伴侣。',
     parentName: '刘女士',
     isVerified: true,
@@ -106,6 +142,12 @@ const mockProfiles: ProfileCard[] = [
     childEducation: '大专',
     childOccupation: '教师',
     childLocation: '南京',
+    workCity: '南京',
+    hasHousing: 'yes',
+    hasCar: 'yes',
+    annualIncome: '20-30万',
+    nativePlace: '安徽',
+    zodiacSign: '羊',
     childDescription: '温柔善良，热爱教育工作，希望找到一个稳定可靠的伴侣。',
     parentName: '周女士',
     isVerified: true,
@@ -119,6 +161,12 @@ const mockProfiles: ProfileCard[] = [
     childEducation: '本科',
     childOccupation: '销售经理',
     childLocation: '广州',
+    workCity: '广州',
+    hasHousing: 'no',
+    hasCar: 'yes',
+    annualIncome: '30-50万',
+    nativePlace: '广东',
+    zodiacSign: '猴',
     childDescription: '外向热情，善于沟通，期待找到一个理解自己的伴侣。',
     parentName: '吴先生',
     isVerified: false,
@@ -154,6 +202,12 @@ export default function Home() {
         childEducation: userProfile.childEducation,
         childOccupation: userProfile.childOccupation,
         childLocation: userProfile.childLocation,
+        workCity: userProfile.workCity,
+        hasHousing: userProfile.hasHousing,
+        hasCar: userProfile.hasCar,
+        annualIncome: userProfile.annualIncome,
+        nativePlace: userProfile.nativePlace,
+        zodiacSign: userProfile.zodiacSign,
         childDescription: userProfile.childDescription,
         parentName: userProfile.parentName,
         isVerified: userProfile.isVerified,
@@ -174,7 +228,7 @@ export default function Home() {
       }
 
       // 按城市筛选
-      if (filters.location && !profile.childLocation.includes(filters.location)) {
+      if (filters.location && !profile.workCity.includes(filters.location)) {
         return false;
       }
 
@@ -315,37 +369,86 @@ export default function Home() {
                   )}
                 </div>
 
-                {/* Profile Info */}
+                {/* Profile Info - Parent-Centric View */}
                 <div className="space-y-3">
-                  {/* Name and Age */}
-                  <div className="flex items-center justify-between">
+                  {/* Name and Age - Primary */}
+                  <div className="flex items-center justify-between pb-2 border-b border-[#E8E8E6]">
                     <h3 className="text-xl font-bold text-gray-800">{profile.childName}</h3>
                     <span className="text-lg font-bold text-[#FF8C42]">{profile.childAge}岁</span>
                   </div>
 
-                  {/* Parent Info */}
-                  <p className="text-sm text-gray-600">{profile.parentName}的孩子</p>
-
-                  {/* Details */}
-                  <div className="space-y-2 text-sm text-gray-700">
-                    <div className="flex items-center gap-2">
-                      <BookOpen size={16} className="text-[#4A90E2]" />
-                      <span>{profile.childEducation}</span>
+                  {/* Hard Assets - Highlighted Section */}
+                  <div className="bg-orange-50 p-3 rounded-lg border border-orange-200 space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-700 font-semibold">学历</span>
+                      <span className="font-bold text-gray-800">{profile.childEducation}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Briefcase size={16} className="text-[#4A90E2]" />
-                      <span>{profile.childOccupation}</span>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-700 font-semibold">职业</span>
+                      <span className="font-bold text-gray-800">{profile.childOccupation}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin size={16} className="text-[#4A90E2]" />
-                      <span>{profile.childLocation}</span>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-700 font-semibold">工作地</span>
+                      <span className="font-bold text-gray-800">{profile.workCity}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm border-t border-orange-200 pt-2">
+                      <span className="text-gray-700 font-semibold flex items-center gap-1">
+                        <HomeIcon className="w-3.5 h-3.5" />
+                        住房
+                      </span>
+                      <span className="font-bold text-[#FF8C42]">
+                        {profile.hasHousing === 'yes' ? '有房' : profile.hasHousing === 'no' ? '无房' : '不便透露'}
+                      </span>
                     </div>
                   </div>
 
+                  {/* Additional Assets */}
+                  {(profile.hasCar !== 'unknown' || profile.annualIncome) && (
+                    <div className="space-y-2 text-sm">
+                      {profile.hasCar !== 'unknown' && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-600 flex items-center gap-1">
+                            <Car className="w-3.5 h-3.5" />
+                            车产
+                          </span>
+                          <span className="font-semibold text-gray-800">
+                            {profile.hasCar === 'yes' ? '有车' : '无车'}
+                          </span>
+                        </div>
+                      )}
+                      {profile.annualIncome && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-600">年收入</span>
+                          <span className="font-semibold text-gray-800">{profile.annualIncome}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Zodiac & Native Place */}
+                  {(profile.zodiacSign || profile.nativePlace) && (
+                    <div className="space-y-2 text-sm border-t border-[#E8E8E6] pt-2">
+                      {profile.nativePlace && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-600">籍贯</span>
+                          <span className="font-semibold text-gray-800">{profile.nativePlace}</span>
+                        </div>
+                      )}
+                      {profile.zodiacSign && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-600">属相</span>
+                          <span className="font-semibold text-gray-800">{profile.zodiacSign}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Description */}
-                  <p className="text-sm text-gray-700 line-clamp-2 bg-[#F5F5F3] p-3 rounded-lg">
-                    {profile.childDescription}
-                  </p>
+                  {profile.childDescription && (
+                    <p className="text-sm text-gray-700 line-clamp-2 bg-[#F5F5F3] p-3 rounded-lg">
+                      {profile.childDescription}
+                    </p>
+                  )}
 
                   {/* Action Buttons */}
                   <div className="flex gap-2 pt-2">

@@ -20,6 +20,13 @@ export interface UserPublishedProfile {
   isVerified: boolean;
   profileImage: string;
   publishedAt: string;
+  // 父母关心的"硬通货"信息
+  hasHousing: 'yes' | 'no' | 'unknown';
+  hasCar: 'yes' | 'no' | 'unknown';
+  annualIncome: string; // 年收入范围，如"30-50万"
+  nativePlace: string; // 籍贯
+  zodiacSign: string; // 属相
+  workCity: string; // 现在工作地
 }
 
 export interface ContactRequest {
@@ -34,7 +41,7 @@ export interface ContactRequest {
 
 interface DataContextType {
   userProfile: UserPublishedProfile | null;
-  publishProfile: (profile: Omit<UserPublishedProfile, 'id' | 'publishedAt' | 'isVerified' | 'profileImage'>) => void;
+  publishProfile: (profile: Omit<UserPublishedProfile, 'id' | 'publishedAt' | 'isVerified'>) => void;
   clearProfile: () => void;
   hasPublishedProfile: boolean;
   contactRequests: ContactRequest[];
@@ -94,13 +101,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const publishProfile = (profile: Omit<UserPublishedProfile, 'id' | 'publishedAt' | 'isVerified' | 'profileImage'>) => {
+  const publishProfile = (profile: Omit<UserPublishedProfile, 'id' | 'publishedAt' | 'isVerified'>) => {
     const newProfile: UserPublishedProfile = {
       ...profile,
       id: `user_${Date.now()}`,
       publishedAt: new Date().toISOString(),
-      isVerified: false,
-      profileImage: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663294512282/7Lo4nggRFmy8FNkeNMysMy/profile-placeholder-ShbPNkLasTbVzht6qnEX9J.webp'
+      isVerified: false
     };
 
     setUserProfile(newProfile);
