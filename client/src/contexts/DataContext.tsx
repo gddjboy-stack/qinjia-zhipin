@@ -27,6 +27,13 @@ export interface UserPublishedProfile {
   nativePlace: string; // 籍贯
   zodiacSign: string; // 属相
   workCity: string; // 现在工作地
+  // 认证信息
+  certifications: {
+    phoneVerified: boolean; // 手机号实名
+    idVerified: boolean; // 身份证实名
+    profileVerified: boolean; // 资料真实性验证
+  };
+  verificationDate?: string; // 认证日期
 }
 
 export interface ContactRequest {

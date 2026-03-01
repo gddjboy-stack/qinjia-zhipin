@@ -11,10 +11,11 @@
  */
 
 import { useState, useMemo } from 'react';
-import { Heart, MapPin, Briefcase, BookOpen, CheckCircle, Filter, Sparkles, Bell, Home as HomeIcon, Car } from 'lucide-react';
+import { Heart, MapPin, Briefcase, BookOpen, CheckCircle, Filter, Sparkles, Bell, Home as HomeIcon, Car, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLocation } from 'wouter';
 import FilterPanel, { FilterOptions } from '@/components/FilterPanel';
+import VerificationModal from '@/components/VerificationModal';
 import { useData } from '@/contexts/DataContext';
 
 interface ProfileCard {
@@ -35,6 +36,12 @@ interface ProfileCard {
   parentName: string;
   isVerified: boolean;
   profileImage: string;
+  certifications?: {
+    phoneVerified: boolean;
+    idVerified: boolean;
+    profileVerified: boolean;
+  };
+  verificationDate?: string;
 }
 
 // Mock data for MVP - Updated with new fields
@@ -56,7 +63,13 @@ const mockProfiles: ProfileCard[] = [
     childDescription: '性格开朗，喜欢运动和旅游，希望找到一个温柔体贴的女性。',
     parentName: '李女士',
     isVerified: true,
-    profileImage: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663294512282/7Lo4nggRFmy8FNkeNMysMy/profile-placeholder-ShbPNkLasTbVzht6qnEX9J.webp'
+    profileImage: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663294512282/7Lo4nggRFmy8FNkeNMysMy/profile-placeholder-ShbPNkLasTbVzht6qnEX9J.webp',
+    certifications: {
+      phoneVerified: true,
+      idVerified: true,
+      profileVerified: true
+    },
+    verificationDate: '2026-02-28'
   },
   {
     id: '2',
@@ -75,7 +88,13 @@ const mockProfiles: ProfileCard[] = [
     childDescription: '温柔贤惠，家庭观念强，希望找到一个有责任心的男性。',
     parentName: '王先生',
     isVerified: true,
-    profileImage: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663294512282/7Lo4nggRFmy8FNkeNMysMy/profile-placeholder-ShbPNkLasTbVzht6qnEX9J.webp'
+    profileImage: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663294512282/7Lo4nggRFmy8FNkeNMysMy/profile-placeholder-ShbPNkLasTbVzht6qnEX9J.webp',
+    certifications: {
+      phoneVerified: true,
+      idVerified: true,
+      profileVerified: true
+    },
+    verificationDate: '2026-02-27'
   },
   {
     id: '3',
@@ -187,6 +206,7 @@ export default function Home() {
     education: ''
   });
   const [sortBy, setSortBy] = useState<'newest' | 'age'>('newest');
+  const [verificationModal, setVerificationModal] = useState<{ isOpen: boolean; profileId?: string }>({ isOpen: false });
 
   // 筛选和排序逻辑
   const filteredProfiles = useMemo(() => {
@@ -211,7 +231,9 @@ export default function Home() {
         childDescription: userProfile.childDescription,
         parentName: userProfile.parentName,
         isVerified: userProfile.isVerified,
-        profileImage: userProfile.profileImage
+        profileImage: userProfile.profileImage,
+        certifications: userProfile.certifications,
+        verificationDate: userProfile.verificationDate
       });
     }
 
@@ -362,10 +384,14 @@ export default function Home() {
                     className="w-full h-full object-cover"
                   />
                   {profile.isVerified && (
-                    <div className="absolute top-3 right-3 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-                      <CheckCircle size={14} />
-                      已认证
-                    </div>
+                    <button
+                      onClick={() => setVerificationModal({ isOpen: true, profileId: profile.id })}
+                      className="absolute top-3 right-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-3 py-2 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+                      title="点击查看认证详情"
+                    >
+                      <Shield size={16} className="flex-shrink-0" />
+                      <span>已认证</span>
+                    </button>
                   )}
                 </div>
 
@@ -517,6 +543,18 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {/* Verification Modal */}
+      {verificationModal.profileId && (
+        <VerificationModal
+          isOpen={verificationModal.isOpen}
+          onClose={() => setVerificationModal({ isOpen: false })}
+          childName={filteredProfiles.find(p => p.id === verificationModal.profileId)?.childName || ''}
+          parentName={filteredProfiles.find(p => p.id === verificationModal.profileId)?.parentName || ''}
+          certifications={filteredProfiles.find(p => p.id === verificationModal.profileId)?.certifications || { phoneVerified: false, idVerified: false, profileVerified: false }}
+          verificationDate={filteredProfiles.find(p => p.id === verificationModal.profileId)?.verificationDate}
+        />
+      )}
     </div>
   );
 }

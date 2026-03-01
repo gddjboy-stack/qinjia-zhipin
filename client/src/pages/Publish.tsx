@@ -141,7 +141,13 @@ export default function Publish() {
         parentName: formData.parentName,
         parentPhone: formData.parentPhone,
         parentLocation: formData.parentLocation,
-        profileImage: profileImage
+        profileImage: profileImage,
+        certifications: {
+          phoneVerified: true,
+          idVerified: false,
+          profileVerified: true
+        },
+        verificationDate: new Date().toISOString()
       });
 
       setIsSubmitting(false);
