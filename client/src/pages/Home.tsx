@@ -11,11 +11,12 @@
  */
 
 import { useState, useMemo } from 'react';
-import { Heart, MapPin, Briefcase, BookOpen, CheckCircle, Filter, Sparkles, Bell, Home as HomeIcon, Car, Shield } from 'lucide-react';
+import { Heart, MapPin, Briefcase, BookOpen, CheckCircle, Filter, Sparkles, Bell, Home as HomeIcon, Car, Shield, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLocation } from 'wouter';
 import FilterPanel, { FilterOptions } from '@/components/FilterPanel';
 import VerificationModal from '@/components/VerificationModal';
+import ShareModal from '@/components/ShareModal';
 import { useData } from '@/contexts/DataContext';
 
 interface ProfileCard {
@@ -207,6 +208,7 @@ export default function Home() {
   });
   const [sortBy, setSortBy] = useState<'newest' | 'age'>('newest');
   const [verificationModal, setVerificationModal] = useState<{ isOpen: boolean; profileId?: string }>({ isOpen: false });
+  const [shareModal, setShareModal] = useState<{ isOpen: boolean; profile?: ProfileCard }>({ isOpen: false });
 
   // 筛选和排序逻辑
   const filteredProfiles = useMemo(() => {
@@ -484,7 +486,7 @@ export default function Home() {
                   )}
 
                   {/* Action Buttons */}
-                  <div className="flex gap-2 pt-2">
+                  <div className="flex gap-2 mt-4">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -506,6 +508,16 @@ export default function Home() {
                     >
                       <Heart size={18} fill={likedProfiles.has(profile.id) ? 'currentColor' : 'none'} />
                       {likedProfiles.has(profile.id) ? '已收藏' : '收藏'}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShareModal({ isOpen: true, profile });
+                      }}
+                      className="flex-1 py-2 px-3 bg-[#F5F5F3] hover:bg-blue-50 text-gray-700 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Share2 size={18} />
+                      分享
                     </button>
                     <button
                       onClick={(e) => {
@@ -553,6 +565,15 @@ export default function Home() {
           parentName={filteredProfiles.find(p => p.id === verificationModal.profileId)?.parentName || ''}
           certifications={filteredProfiles.find(p => p.id === verificationModal.profileId)?.certifications || { phoneVerified: false, idVerified: false, profileVerified: false }}
           verificationDate={filteredProfiles.find(p => p.id === verificationModal.profileId)?.verificationDate}
+        />
+      )}
+
+      {/* Share Modal */}
+      {shareModal.profile && (
+        <ShareModal
+          isOpen={shareModal.isOpen}
+          onClose={() => setShareModal({ isOpen: false })}
+          profile={shareModal.profile}
         />
       )}
     </div>
