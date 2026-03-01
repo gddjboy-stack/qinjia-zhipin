@@ -1,13 +1,13 @@
 /**
  * Home Page - 亲家直聘首页
- * 展示推荐的子女资料卡片流，支持筛选和排序
+ * 展示推荐的子女资料卡片流，支持性别切换、筛选和排序
  * 用户发布的资料会优先显示在首页第一位
  * 
  * 设计理念：温暖关怀型现代主义
  * - 卡片流设计，每个卡片代表一个子女资料
  * - 使用暖橙色主色 + 清爽蓝辅色
  * - 充足的留白和柔和阴影，传达关怀感
- * - 新增筛选功能，帮助父母快速找到合适的资料
+ * - 新增性别切换功能，让父母快速选择查找儿媳或女婿
  */
 
 import { useState, useMemo } from 'react';
@@ -128,7 +128,7 @@ const mockProfiles: ProfileCard[] = [
 
 export default function Home() {
   const [, setLocation] = useLocation();
-  const { userProfile, unreadCount } = useData();
+  const { userProfile, unreadCount, genderFilter, setGenderFilter } = useData();
   const [likedProfiles, setLikedProfiles] = useState<Set<string>>(new Set());
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState<FilterOptions>({
@@ -161,24 +161,24 @@ export default function Home() {
       });
     }
 
-    // 添加其他资料
+    // 添加其他资料，按性别筛选
     const otherProfiles = mockProfiles.filter(profile => {
-      // 年龄筛选
+      // 按性别筛选
+      if (genderFilter && profile.childGender !== genderFilter) {
+        return false;
+      }
+
+      // 按年龄筛选
       if (profile.childAge < filters.ageMin || profile.childAge > filters.ageMax) {
         return false;
       }
 
-      // 性别筛选
-      if (filters.gender && profile.childGender !== filters.gender) {
+      // 按城市筛选
+      if (filters.location && !profile.childLocation.includes(filters.location)) {
         return false;
       }
 
-      // 地点筛选
-      if (filters.location && profile.childLocation !== filters.location) {
-        return false;
-      }
-
-      // 学历筛选
+      // 按学历筛选
       if (filters.education && profile.childEducation !== filters.education) {
         return false;
       }
@@ -186,110 +186,100 @@ export default function Home() {
       return true;
     });
 
-    // 排序（用户资料始终在最前面）
+    // 排序
     if (sortBy === 'age') {
       otherProfiles.sort((a, b) => a.childAge - b.childAge);
     }
 
     result = result.concat(otherProfiles);
     return result;
-  }, [filters, sortBy, userProfile]);
-
-  const toggleLike = (id: string) => {
-    const newLiked = new Set(likedProfiles);
-    if (newLiked.has(id)) {
-      newLiked.delete(id);
-    } else {
-      newLiked.add(id);
-    }
-    setLikedProfiles(newLiked);
-  };
-
-  const handleApplyFilters = (newFilters: FilterOptions) => {
-    setFilters(newFilters);
-  };
-
-  // 检查是否有活跃的筛选
-  const hasActiveFilters = filters.gender !== '' || 
-                           filters.location !== '' || 
-                           filters.education !== '' ||
-                           filters.ageMin !== 18 ||
-                           filters.ageMax !== 60;
+  }, [userProfile, genderFilter, filters, sortBy]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#FAFAF8] to-white pb-24">
-      {/* Header Banner */}
-      <div className="bg-gradient-to-r from-[#FF8C42] to-[#FF7A2F] text-white px-4 py-8 text-center">
-        <h1 className="text-3xl font-bold mb-2">亲家直聘</h1>
-        <p className="text-sm opacity-90">为您的孩子找到合适的另一半</p>
-      </div>
-
-      {/* Hero Image */}
-      <div className="px-4 py-6">
-        <img
-          src="https://d2xsxph8kpxj0f.cloudfront.net/310519663294512282/7Lo4nggRFmy8FNkeNMysMy/hero-banner-drRCoc5QTnwZPKCaAsomcg.webp"
-          alt="Happy families"
-          className="w-full rounded-2xl object-cover h-48 shadow-lg"
-        />
-      </div>
-
-      {/* Quick Stats */}
-      <div className="px-4 py-4 flex gap-3 justify-center">
-        <div className="text-center">
-          <div className="text-2xl font-bold text-[#FF8C42]">1000+</div>
-          <div className="text-xs text-gray-600">真实用户</div>
+    <div className="min-h-screen bg-[#FAFAF8] pb-20">
+      {/* Header */}
+      <div className="sticky top-0 z-20 bg-white border-b border-[#E8E8E6] shadow-sm">
+        <div className="bg-gradient-to-r from-[#FF8C42] to-[#FF7A2F] text-white px-4 py-4 text-center">
+          <h1 className="text-2xl font-bold">亲家直聘</h1>
+          <p className="text-sm text-orange-100 mt-1">为您的孩子找到合适的伴侣</p>
         </div>
-        <div className="text-center">
-          <div className="text-2xl font-bold text-[#4A90E2]">500+</div>
-          <div className="text-xs text-gray-600">成功配对</div>
-        </div>
-        <div className="text-center">
-          <div className="text-2xl font-bold text-[#52C41A]">98%</div>
-          <div className="text-xs text-gray-600">用户满意度</div>
-        </div>
-      </div>
 
-      {/* Filter and Sort Controls */}
-      <div className="px-4 py-4 flex gap-3">
-        <Button
-          variant="outline"
-          className="flex-1 border-[#FF8C42] text-[#FF8C42] hover:bg-orange-50 flex items-center justify-center gap-2"
-          onClick={() => setIsFilterOpen(true)}
-        >
-          <Filter size={18} />
-          筛选
-          {hasActiveFilters && (
-            <span className="ml-1 bg-[#FF8C42] text-white text-xs px-2 py-0.5 rounded-full">
-              已激活
-            </span>
+        {/* Gender Toggle Buttons */}
+        <div className="px-4 py-4 space-y-3">
+          <div className="flex gap-3">
+            <button
+              onClick={() => setGenderFilter('female')}
+              className={`flex-1 py-3 px-4 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2 ${
+                genderFilter === 'female'
+                  ? 'bg-[#FF8C42] text-white shadow-lg scale-105'
+                  : 'bg-white text-gray-800 border-2 border-[#FF8C42] hover:bg-orange-50'
+              }`}
+            >
+              <span>👰</span>
+              找儿媳
+            </button>
+            <button
+              onClick={() => setGenderFilter('male')}
+              className={`flex-1 py-3 px-4 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2 ${
+                genderFilter === 'male'
+                  ? 'bg-[#FF8C42] text-white shadow-lg scale-105'
+                  : 'bg-white text-gray-800 border-2 border-[#FF8C42] hover:bg-orange-50'
+              }`}
+            >
+              <span>🤵</span>
+              找女婿
+            </button>
+          </div>
+
+          {/* Filter and Sort Controls */}
+          <div className="flex gap-3">
+            <button
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className="flex-1 flex items-center justify-center gap-2 py-2 px-3 border border-[#E8E8E6] rounded-lg hover:bg-[#F5F5F3] transition-colors"
+            >
+              <Filter size={18} className="text-[#FF8C42]" />
+              <span className="text-sm font-semibold text-gray-800">筛选</span>
+            </button>
+
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as 'newest' | 'age')}
+              className="flex-1 py-2 px-3 border border-[#E8E8E6] rounded-lg text-sm font-semibold text-gray-800 hover:bg-[#F5F5F3] transition-colors"
+            >
+              <option value="newest">最新发布</option>
+              <option value="age">年龄从小到大</option>
+            </select>
+          </div>
+
+          {/* Filter Panel */}
+          {isFilterOpen && (
+            <FilterPanel
+              isOpen={isFilterOpen}
+              onClose={() => setIsFilterOpen(false)}
+              onApply={setFilters}
+              currentFilters={filters}
+              resultCount={filteredProfiles.length}
+            />
           )}
-        </Button>
-
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as 'newest' | 'age')}
-          className="px-4 py-2 border border-[#E8E8E6] rounded-lg text-sm text-gray-800 bg-white hover:bg-[#F5F5F3] transition-colors"
-        >
-          <option value="newest">最新发布</option>
-          <option value="age">年龄从小到大</option>
-        </select>
+        </div>
       </div>
 
       {/* Results Count */}
-      <div className="px-4 py-2 text-sm text-gray-600">
-        找到 <span className="font-bold text-[#FF8C42]">{filteredProfiles.length}</span> 个符合条件的资料
+      <div className="px-4 py-3 text-sm text-gray-600">
+        找到 {filteredProfiles.length} 个符合条件的资料
       </div>
 
-      {/* Profile Cards Stream */}
-      <div className="px-4 py-4 space-y-4">
+      {/* Profiles Grid */}
+      <div className="px-4 space-y-4">
         {filteredProfiles.length > 0 ? (
           filteredProfiles.map((profile, index) => {
             const isUserProfile = userProfile && profile.id === userProfile.id;
+
             return (
               <div
                 key={profile.id}
-                className={`warm-card cursor-pointer hover:scale-105 transition-transform duration-300 animate-in fade-in slide-in-from-bottom-4 ${
-                  isUserProfile ? 'ring-2 ring-[#FF8C42] shadow-lg' : ''
+                className={`warm-card overflow-hidden cursor-pointer transform transition-all duration-300 hover:shadow-lg hover:scale-102 animate-fadeIn ${
+                  isUserProfile ? 'border-2 border-[#FF8C42]' : ''
                 }`}
                 style={{ animationDelay: `${index * 100}ms` }}
                 onClick={() => setLocation(`/profile/${profile.id}`)}
@@ -318,150 +308,105 @@ export default function Home() {
                     className="w-full h-full object-cover"
                   />
                   {profile.isVerified && (
-                    <div className="absolute top-3 right-3 warm-badge warm-badge-verified flex items-center gap-1">
+                    <div className="absolute top-3 right-3 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1">
                       <CheckCircle size={14} />
-                      <span>已认证</span>
+                      已认证
                     </div>
                   )}
                 </div>
 
                 {/* Profile Info */}
-                <div className="px-4 pb-4">
+                <div className="space-y-3">
                   {/* Name and Age */}
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-xl font-bold text-gray-800">
-                      {profile.childName}
-                      <span className="text-lg ml-2 text-gray-600">{profile.childAge}岁</span>
-                    </h3>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleLike(profile.id);
-                      }}
-                      className="p-2 rounded-full hover:bg-red-50 transition-colors"
-                    >
-                      <Heart
-                        size={24}
-                        className={likedProfiles.has(profile.id) ? 'fill-red-500 text-red-500' : 'text-gray-300'}
-                      />
-                    </button>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-bold text-gray-800">{profile.childName}</h3>
+                    <span className="text-lg font-bold text-[#FF8C42]">{profile.childAge}岁</span>
                   </div>
 
                   {/* Parent Info */}
-                  <div className="text-sm text-gray-600 mb-3">
-                    <span className="font-semibold">{profile.parentName}</span> 的孩子
-                  </div>
+                  <p className="text-sm text-gray-600">{profile.parentName}的孩子</p>
 
-                  {/* Key Info Grid */}
-                  <div className="grid grid-cols-2 gap-2 mb-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-700 bg-[#F5F5F3] px-3 py-2 rounded-lg">
-                      <MapPin size={16} className="text-[#FF8C42]" />
-                      <span>{profile.childLocation}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-700 bg-[#F5F5F3] px-3 py-2 rounded-lg">
+                  {/* Details */}
+                  <div className="space-y-2 text-sm text-gray-700">
+                    <div className="flex items-center gap-2">
                       <BookOpen size={16} className="text-[#4A90E2]" />
                       <span>{profile.childEducation}</span>
                     </div>
-                  </div>
-
-                  {/* Occupation */}
-                  <div className="flex items-center gap-2 text-sm text-gray-700 bg-[#F5F5F3] px-3 py-2 rounded-lg mb-4">
-                    <Briefcase size={16} className="text-[#52C41A]" />
-                    <span>{profile.childOccupation}</span>
+                    <div className="flex items-center gap-2">
+                      <Briefcase size={16} className="text-[#4A90E2]" />
+                      <span>{profile.childOccupation}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MapPin size={16} className="text-[#4A90E2]" />
+                      <span>{profile.childLocation}</span>
+                    </div>
                   </div>
 
                   {/* Description */}
-                  <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                  <p className="text-sm text-gray-700 line-clamp-2 bg-[#F5F5F3] p-3 rounded-lg">
                     {profile.childDescription}
                   </p>
 
                   {/* Action Buttons */}
-                  <div className="flex gap-3">
-                    {isUserProfile ? (
-                      <>
-                        <Button
-                          variant="outline"
-                          className="flex-1 border-[#FF8C42] text-[#FF8C42] hover:bg-[#FF8C42] hover:text-white"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setLocation('/me');
-                          }}
-                        >
-                          编辑资料
-                        </Button>
-                        <Button
-                          className="flex-1 bg-[#FF8C42] hover:bg-[#FF7A2F] text-white"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setLocation('/me');
-                          }}
-                        >
-                          查看联系
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Button
-                          variant="outline"
-                          className="flex-1 border-[#FF8C42] text-[#FF8C42] hover:bg-[#FF8C42] hover:text-white"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setLocation(`/profile/${profile.id}`);
-                          }}
-                        >
-                          查看详情
-                        </Button>
-                        <Button
-                          className="flex-1 bg-[#FF8C42] hover:bg-[#FF7A2F] text-white"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setLocation(`/contact/${profile.id}`);
-                          }}
-                        >
-                          申请联系
-                        </Button>
-                      </>
-                    )}
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLikedProfiles(prev => {
+                          const newSet = new Set(prev);
+                          if (newSet.has(profile.id)) {
+                            newSet.delete(profile.id);
+                          } else {
+                            newSet.add(profile.id);
+                          }
+                          return newSet;
+                        });
+                      }}
+                      className={`flex-1 py-2 px-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
+                        likedProfiles.has(profile.id)
+                          ? 'bg-red-100 text-red-600'
+                          : 'bg-[#F5F5F3] text-gray-700 hover:bg-red-50'
+                      }`}
+                    >
+                      <Heart size={18} fill={likedProfiles.has(profile.id) ? 'currentColor' : 'none'} />
+                      {likedProfiles.has(profile.id) ? '已收藏' : '收藏'}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLocation(`/contact/${profile.id}`);
+                      }}
+                      className="flex-1 py-2 px-3 bg-[#FF8C42] hover:bg-[#FF7A2F] text-white rounded-lg font-semibold transition-colors"
+                    >
+                      申请联系
+                    </button>
                   </div>
                 </div>
               </div>
             );
           })
         ) : (
-          <div className="text-center py-12">
-            <div className="text-4xl mb-4">🔍</div>
-            <h3 className="text-lg font-bold text-gray-800 mb-2">未找到符合条件的资料</h3>
-            <p className="text-gray-600 mb-6">尝试调整筛选条件</p>
+          <div className="warm-card text-center py-12">
+            <div className="text-6xl mb-4">🔍</div>
+            <h3 className="text-lg font-bold text-gray-800 mb-2">未找到匹配资料</h3>
+            <p className="text-gray-600 mb-6">调整筛选条件后重试</p>
             <Button
               className="bg-[#FF8C42] hover:bg-[#FF7A2F] text-white"
-              onClick={() => setIsFilterOpen(true)}
+              onClick={() => {
+                setFilters({
+                  ageMin: 18,
+                  ageMax: 60,
+                  gender: '',
+                  location: '',
+                  education: ''
+                });
+              }}
             >
-              修改筛选条件
+              重置筛选
             </Button>
           </div>
         )}
       </div>
-
-      {/* CTA Section */}
-      {filteredProfiles.length > 0 && !userProfile && (
-        <div className="px-4 py-6 text-center">
-          <Button
-            className="w-full bg-[#4A90E2] hover:bg-[#3A7FD2] text-white py-3 text-lg"
-            onClick={() => setLocation('/publish')}
-          >
-            发布我的孩子资料
-          </Button>
-        </div>
-      )}
-
-      {/* Filter Panel */}
-      <FilterPanel
-        isOpen={isFilterOpen}
-        onClose={() => setIsFilterOpen(false)}
-        onApply={handleApplyFilters}
-        currentFilters={filters}
-        resultCount={filteredProfiles.length}
-      />
     </div>
   );
 }

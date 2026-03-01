@@ -42,18 +42,22 @@ interface DataContextType {
   markAsRead: (requestId: string) => void;
   markAllAsRead: () => void;
   unreadCount: number;
+  genderFilter: 'female' | 'male';
+  setGenderFilter: (gender: 'female' | 'male') => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 const PROFILE_STORAGE_KEY = 'qinjia_user_profile';
 const CONTACTS_STORAGE_KEY = 'qinjia_contact_requests';
+const GENDER_FILTER_KEY = 'qinjia_gender_filter';
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserPublishedProfile | null>(null);
   const [hasPublishedProfile, setHasPublishedProfile] = useState(false);
   const [contactRequests, setContactRequests] = useState<ContactRequest[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [genderFilter, setGenderFilter] = useState<'female' | 'male'>('female');
 
   // 从 localStorage 加载数据
   useEffect(() => {
@@ -81,6 +85,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         console.error('Failed to parse stored contacts:', error);
       }
+    }
+
+    // 加载性别筛选偏好
+    const storedGenderFilter = localStorage.getItem(GENDER_FILTER_KEY);
+    if (storedGenderFilter === 'male' || storedGenderFilter === 'female') {
+      setGenderFilter(storedGenderFilter);
     }
   }, []);
 
@@ -134,6 +144,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(CONTACTS_STORAGE_KEY, JSON.stringify(updatedRequests));
   };
 
+  const handleSetGenderFilter = (gender: 'female' | 'male') => {
+    setGenderFilter(gender);
+    localStorage.setItem(GENDER_FILTER_KEY, gender);
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -145,7 +160,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         addContactRequest,
         markAsRead,
         markAllAsRead,
-        unreadCount
+        unreadCount,
+        genderFilter,
+        setGenderFilter: handleSetGenderFilter
       }}
     >
       {children}
