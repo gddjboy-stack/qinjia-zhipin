@@ -371,6 +371,13 @@ export default function Home() {
 
                 {/* Profile Info - Parent-Centric View */}
                 <div className="space-y-3">
+                  {/* Publisher Identity - Key for Parent Connection */}
+                  <div className="bg-blue-50 px-3 py-2 rounded-lg border border-blue-200">
+                    <p className="text-sm font-bold text-blue-800">
+                      {profile.parentName}的{profile.childGender === 'female' ? '女儿' : '儿子'}
+                    </p>
+                  </div>
+
                   {/* Name and Age - Primary */}
                   <div className="flex items-center justify-between pb-2 border-b border-[#E8E8E6]">
                     <h3 className="text-xl font-bold text-gray-800">{profile.childName}</h3>
