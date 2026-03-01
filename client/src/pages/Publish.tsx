@@ -110,7 +110,7 @@ export default function Publish() {
       toast.error('请上传相片');
       return;
     }
-    if (!formData.childAge || !formData.childEducation || !formData.childOccupation || !formData.workCity || !formData.hasHousing) {
+    if (!formData.childName || !formData.childAge || !formData.childEducation || !formData.childOccupation || !formData.workCity || !formData.hasHousing) {
       toast.error('请填写所有必填项');
       return;
     }
