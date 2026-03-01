@@ -58,6 +58,8 @@ interface DataContextType {
   unreadCount: number;
   genderFilter: 'female' | 'male';
   setGenderFilter: (gender: 'female' | 'male') => void;
+  isFirstVisit: boolean;
+  markFirstVisitDone: () => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -65,6 +67,7 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 const PROFILE_STORAGE_KEY = 'qinjia_user_profile';
 const CONTACTS_STORAGE_KEY = 'qinjia_contact_requests';
 const GENDER_FILTER_KEY = 'qinjia_gender_filter';
+const FIRST_VISIT_KEY = 'qinjia_first_visit_shown';
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserPublishedProfile | null>(null);
@@ -72,6 +75,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [contactRequests, setContactRequests] = useState<ContactRequest[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [genderFilter, setGenderFilter] = useState<'female' | 'male'>('female');
+  const [isFirstVisit, setIsFirstVisit] = useState(true);
 
   // 从 localStorage 加载数据
   useEffect(() => {
@@ -106,6 +110,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     if (storedGenderFilter === 'male' || storedGenderFilter === 'female') {
       setGenderFilter(storedGenderFilter);
     }
+
+    // 检查是否是首次访问
+    const firstVisitShown = localStorage.getItem(FIRST_VISIT_KEY);
+    setIsFirstVisit(!firstVisitShown);
   }, []);
 
   const publishProfile = (profile: Omit<UserPublishedProfile, 'id' | 'publishedAt' | 'isVerified'>) => {
@@ -162,6 +170,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(GENDER_FILTER_KEY, gender);
   };
 
+  const markFirstVisitDone = () => {
+    localStorage.setItem(FIRST_VISIT_KEY, 'true');
+    setIsFirstVisit(false);
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -175,7 +188,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         markAllAsRead,
         unreadCount,
         genderFilter,
-        setGenderFilter: handleSetGenderFilter
+        setGenderFilter,
+        isFirstVisit,
+        markFirstVisitDone
       }}
     >
       {children}

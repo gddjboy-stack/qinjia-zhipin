@@ -1,10 +1,12 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
+import { Route, Switch, useLocation } from "wouter";
+import { useState, useEffect } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { DataProvider } from "./contexts/DataContext";
+import { DataProvider, useData } from "./contexts/DataContext";
+import ParentGuideModal from "./components/ParentGuideModal";
 import Home from "./pages/Home";
 import ProfileDetail from "./pages/ProfileDetail";
 import Publish from "./pages/Publish";
@@ -14,10 +16,28 @@ import BottomNav from "./components/BottomNav";
 
 
 function Router() {
+  const { isFirstVisit, markFirstVisitDone } = useData();
+  const [location, setLocation] = useLocation();
+  const [showGuide, setShowGuide] = useState(false);
+
+  useEffect(() => {
+    // 只在首页且是首次访问时显示指南
+    if (location === '/' && isFirstVisit) {
+      setShowGuide(true);
+    }
+  }, [location, isFirstVisit]);
+
+  const handleGetStarted = () => {
+    markFirstVisitDone();
+    setShowGuide(false);
+    // 跳转到发布页面
+    setLocation('/publish');
+  };
+
   return (
     <>
       <Switch>
-        <Route path={"/"} component={Home} />
+        <Route path={"/ "} component={Home} />
         <Route path={"/profile/:id"} component={ProfileDetail} />
         <Route path={"/publish"} component={Publish} />
         <Route path={"/contact/:id"} component={Contact} />
@@ -27,6 +47,14 @@ function Router() {
         <Route component={NotFound} />
       </Switch>
       <BottomNav />
+      <ParentGuideModal
+        isOpen={showGuide}
+        onClose={() => {
+          markFirstVisitDone();
+          setShowGuide(false);
+        }}
+        onGetStarted={handleGetStarted}
+      />
     </>
   );
 }
