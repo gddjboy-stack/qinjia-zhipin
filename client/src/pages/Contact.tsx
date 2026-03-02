@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useData } from '@/contexts/DataContext';
+import { trackEvent, ANALYTICS_EVENTS } from '@/lib/analytics';
 
 // Mock profile data to get contact info
 const mockProfiles: Record<string, { childName: string; parentName: string }> = {
@@ -49,6 +50,12 @@ export default function Contact() {
     }
 
     setIsSubmitting(true);
+    
+    // 埋点：申请提交
+    trackEvent(ANALYTICS_EVENTS.APPLICATION_SUBMIT, {
+      to_profile_id: id,
+      message_length: message.length
+    });
     
     // Simulate API call
     setTimeout(() => {

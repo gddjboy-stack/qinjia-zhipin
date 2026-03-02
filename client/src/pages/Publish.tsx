@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { useData } from '@/contexts/DataContext';
+import { trackEvent, ANALYTICS_EVENTS } from '@/lib/analytics';
 
 const ZODIAC_SIGNS = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪'];
 const INCOME_RANGES = ['20万以下', '20-30万', '30-50万', '50-80万', '80-100万', '100万以上', '不便透露'];
@@ -46,6 +47,11 @@ export default function Publish() {
 
   // 初始化表单：如果已有发布的资料，则填充表单
   useEffect(() => {
+    // 埋点：发布页进入
+    trackEvent(ANALYTICS_EVENTS.PUBLISH_PAGE_ENTER, {
+      is_editing: !!userProfile
+    });
+
     if (userProfile) {
       setFormData({
         childName: userProfile.childName,
@@ -120,6 +126,16 @@ export default function Publish() {
     }
 
     setIsSubmitting(true);
+    
+    // 埋点：表单提交
+    trackEvent(ANALYTICS_EVENTS.PUBLISH_FORM_COMPLETE, {
+      child_gender: formData.childGender,
+      education: formData.childEducation,
+      occupation: formData.childOccupation,
+      has_housing: formData.hasHousing,
+      has_car: formData.hasCar,
+      is_editing: isEditing
+    });
     
     // Simulate API call
     setTimeout(() => {

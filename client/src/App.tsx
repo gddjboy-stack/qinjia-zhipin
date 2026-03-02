@@ -13,6 +13,7 @@ import Publish from "./pages/Publish";
 import Contact from "./pages/Contact";
 import Profile from "./pages/Profile";
 import BottomNav from "./components/BottomNav";
+import Analytics from "./pages/Analytics";
 
 
 function Router() {
@@ -42,6 +43,7 @@ function Router() {
         <Route path={"/publish"} component={Publish} />
         <Route path={"/contact/:id"} component={Contact} />
         <Route path={"/me"} component={Profile} />
+        <Route path={"/analytics"} component={Analytics} />
         <Route path={"/404"} component={NotFound} />
         {/* Final fallback route */}
         <Route component={NotFound} />

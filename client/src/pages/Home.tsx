@@ -10,7 +10,7 @@
  * - 新增性别切换功能，让父母快速选择查找儿媳或女婿
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Heart, MapPin, Briefcase, BookOpen, CheckCircle, Filter, Sparkles, Bell, Home as HomeIcon, Car, Shield, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLocation } from 'wouter';
@@ -18,6 +18,7 @@ import FilterPanel, { FilterOptions } from '@/components/FilterPanel';
 import VerificationModal from '@/components/VerificationModal';
 
 import { useData } from '@/contexts/DataContext';
+import { trackEvent, ANALYTICS_EVENTS } from '@/lib/analytics';
 
 interface ProfileCard {
   id: string;
@@ -209,6 +210,14 @@ export default function Home() {
   const [sortBy, setSortBy] = useState<'newest' | 'age'>('newest');
   const [verificationModal, setVerificationModal] = useState<{ isOpen: boolean; profileId?: string }>({ isOpen: false });
 
+  // 埋点：页面浏览
+  useEffect(() => {
+    trackEvent(ANALYTICS_EVENTS.PAGE_VIEW, {
+      page: 'home',
+      gender_filter: genderFilter
+    });
+  }, []);
+
   // 检查是否在微信中
   const isInWeChat = () => {
     return /micromessenger/i.test(navigator.userAgent);
@@ -216,6 +225,12 @@ export default function Home() {
 
   // 处理邀请分享
   const handleInviteShare = (profile: ProfileCard) => {
+    // 埋点：邀请分享
+    trackEvent(ANALYTICS_EVENTS.INVITE_SHARE, {
+      profile_id: profile.id,
+      child_gender: profile.childGender
+    });
+
     if (!isInWeChat()) {
       alert('💵 请在微信中打开此链接，才能分享给望友');
       return;
@@ -335,7 +350,10 @@ export default function Home() {
         <div className="px-4 py-4 space-y-3">
           <div className="flex gap-3">
             <button
-              onClick={() => setGenderFilter('female')}
+              onClick={() => {
+                setGenderFilter('female');
+                trackEvent(ANALYTICS_EVENTS.GENDER_SWITCH, { gender: 'female' });
+              }}
               className={`flex-1 py-3 px-4 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2 ${
                 genderFilter === 'female'
                   ? 'bg-[#FF8C42] text-white shadow-lg scale-105'
@@ -346,7 +364,10 @@ export default function Home() {
               找儿媳
             </button>
             <button
-              onClick={() => setGenderFilter('male')}
+              onClick={() => {
+                setGenderFilter('male');
+                trackEvent(ANALYTICS_EVENTS.GENDER_SWITCH, { gender: 'male' });
+              }}
               className={`flex-1 py-3 px-4 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2 ${
                 genderFilter === 'male'
                   ? 'bg-[#FF8C42] text-white shadow-lg scale-105'
@@ -409,7 +430,14 @@ export default function Home() {
                   isUserProfile ? 'border-2 border-[#FF8C42]' : ''
                 }`}
                 style={{ animationDelay: `${index * 100}ms` }}
-                onClick={() => setLocation(`/profile/${profile.id}`)}
+                onClick={() => {
+                  trackEvent(ANALYTICS_EVENTS.PROFILE_VIEW, {
+                    profile_id: profile.id,
+                    child_gender: profile.childGender,
+                    from_page: 'home'
+                  });
+                  setLocation(`/profile/${profile.id}`);
+                }}
               >
                 {/* User Profile Badge */}
                 {isUserProfile && (
