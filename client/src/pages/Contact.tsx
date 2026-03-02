@@ -60,10 +60,14 @@ export default function Contact() {
     // Simulate API call
     setTimeout(() => {
       // 添加联系申请到全局状态
+      // 注意：fromProfileId是申请者（用户自己），toProfileId是被申请者（目标用户）
       addContactRequest({
-        fromProfileId: id || '',
-        fromParentName: targetProfile.parentName,
-        fromChildName: targetProfile.childName,
+        fromProfileId: userProfile?.id || 'unknown',  // 申请者是用户自己
+        fromParentName: userProfile?.parentName || '未知',  // 申请者的家长名字
+        fromChildName: userProfile?.childName || '未知',    // 申请者的孩子名字
+        toProfileId: id || '',  // 被申请者是目标用户
+        toParentName: targetProfile.parentName,  // 被申请者的家长名字
+        toChildName: targetProfile.childName,    // 被申请者的孩子名字
         message: message
       });
 

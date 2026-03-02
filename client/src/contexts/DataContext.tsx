@@ -38,9 +38,12 @@ export interface UserPublishedProfile {
 
 export interface ContactRequest {
   id: string;
-  fromProfileId: string;
-  fromParentName: string;
-  fromChildName: string;
+  fromProfileId: string;  // 申请者的ID
+  fromParentName: string;  // 申请者的家长名字
+  fromChildName: string;   // 申请者的孩子名字
+  toProfileId: string;     // 被申请者的ID
+  toParentName: string;    // 被申请者的家长名字
+  toChildName: string;     // 被申请者的孩子名字
   message: string;
   timestamp: string;
   isRead: boolean;

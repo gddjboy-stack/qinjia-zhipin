@@ -32,7 +32,7 @@ interface ProfileDetail {
   profileImage: string;
 }
 
-// Mock data
+// Mock data - 包含所有7个资料
 const mockProfileDetails: Record<string, ProfileDetail> = {
   '1': {
     id: '1',
@@ -42,7 +42,7 @@ const mockProfileDetails: Record<string, ProfileDetail> = {
     childZodiac: '龙',
     childEducation: '本科',
     childOccupation: '软件工程师',
-    childIncome: '20000-50000',
+    childIncome: '50-80万',
     childLocation: '北京',
     childDescription: '性格开朗，喜欢运动和旅游，希望找到一个温柔体贴的女性。工作稳定，有房有车，家庭观念强。',
     parentName: '李女士',
@@ -59,7 +59,7 @@ const mockProfileDetails: Record<string, ProfileDetail> = {
     childZodiac: '兔',
     childEducation: '硕士',
     childOccupation: '医生',
-    childIncome: '10000-20000',
+    childIncome: '30-50万',
     childLocation: '上海',
     childDescription: '温柔贤惠，家庭观念强，希望找到一个有责任心的男性。工作稳定，独立自强。',
     parentName: '王先生',
@@ -76,12 +76,80 @@ const mockProfileDetails: Record<string, ProfileDetail> = {
     childZodiac: '虎',
     childEducation: '本科',
     childOccupation: '企业管理',
-    childIncome: '50000以上',
+    childIncome: '80-100万',
     childLocation: '深圳',
     childDescription: '成熟稳重，事业有成，寻找志同道合的伴侣。',
     parentName: '张女士',
     parentPhone: '137****9999',
     parentLocation: '深圳',
+    isVerified: false,
+    profileImage: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663294512282/7Lo4nggRFmy8FNkeNMysMy/profile-placeholder-ShbPNkLasTbVzht6qnEX9J.webp'
+  },
+  '4': {
+    id: '4',
+    childName: '陈思',
+    childAge: 26,
+    childGender: 'female',
+    childZodiac: '马',
+    childEducation: '本科',
+    childOccupation: '设计师',
+    childIncome: '20-30万',
+    childLocation: '杭州',
+    childDescription: '创意十足，热爱生活，期待遇见有趣的灵魂。独立自主，有自己的事业和梦想。',
+    parentName: '陈先生',
+    parentPhone: '136****3333',
+    parentLocation: '杭州',
+    isVerified: true,
+    profileImage: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663294512282/7Lo4nggRFmy8FNkeNMysMy/profile-placeholder-ShbPNkLasTbVzht6qnEX9J.webp'
+  },
+  '5': {
+    id: '5',
+    childName: '刘军',
+    childAge: 38,
+    childGender: 'male',
+    childZodiac: '蛇',
+    childEducation: '硕士',
+    childOccupation: '律师',
+    childIncome: '100万以上',
+    childLocation: '北京',
+    childDescription: '专业素养高，生活品质讲究，寻找志同道合的伴侣。事业有成，家庭观念强。',
+    parentName: '刘女士',
+    parentPhone: '135****4444',
+    parentLocation: '北京',
+    isVerified: true,
+    profileImage: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663294512282/7Lo4nggRFmy8FNkeNMysMy/profile-placeholder-ShbPNkLasTbVzht6qnEX9J.webp'
+  },
+  '6': {
+    id: '6',
+    childName: '周丽',
+    childAge: 30,
+    childGender: 'female',
+    childZodiac: '羊',
+    childEducation: '大专',
+    childOccupation: '教师',
+    childIncome: '20-30万',
+    childLocation: '南京',
+    childDescription: '温柔善良，热爱教育工作，希望找到一个稳定可靠的伴侣。有房有车，生活稳定。',
+    parentName: '周女士',
+    parentPhone: '134****5555',
+    parentLocation: '南京',
+    isVerified: true,
+    profileImage: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663294512282/7Lo4nggRFmy8FNkeNMysMy/profile-placeholder-ShbPNkLasTbVzht6qnEX9J.webp'
+  },
+  '7': {
+    id: '7',
+    childName: '吴涛',
+    childAge: 34,
+    childGender: 'male',
+    childZodiac: '猴',
+    childEducation: '本科',
+    childOccupation: '销售经理',
+    childIncome: '30-50万',
+    childLocation: '广州',
+    childDescription: '外向热情，善于沟通，期待找到一个理解自己的伴侣。有车，生活充满活力。',
+    parentName: '吴先生',
+    parentPhone: '133****6666',
+    parentLocation: '广州',
     isVerified: false,
     profileImage: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663294512282/7Lo4nggRFmy8FNkeNMysMy/profile-placeholder-ShbPNkLasTbVzht6qnEX9J.webp'
   }
@@ -186,7 +254,7 @@ export default function ProfileDetail() {
         <h3 className="text-lg font-bold text-gray-800 mb-3">更多信息</h3>
         <div className="warm-card space-y-3">
           <div className="flex justify-between items-center pb-3 border-b border-[#E8E8E6]">
-            <span className="text-gray-600">月收入</span>
+            <span className="text-gray-600">年收入</span>
             <span className="font-semibold text-gray-800">{profile.childIncome}</span>
           </div>
           <div className="flex justify-between items-center">
