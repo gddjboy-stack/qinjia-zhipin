@@ -13,6 +13,8 @@ import { useState, useEffect } from 'react';
 import { useData } from '@/contexts/DataContext';
 import type { ContactRequest } from '@/contexts/DataContext';
 
+type SetLocation = (path: string) => void;
+
 export default function Profile() {
   const [, setLocation] = useLocation();
   const { userProfile, contactRequests, markAllAsRead, unreadCount } = useData();
@@ -236,13 +238,22 @@ export default function Profile() {
         </h3>
 
         <div className="warm-card space-y-3">
-          <button className="w-full text-left py-3 border-b border-[#E8E8E6] hover:text-[#FF8C42] transition-colors">
+          <button
+            onClick={() => setLocation('/settings/privacy')}
+            className="w-full text-left py-3 border-b border-[#E8E8E6] hover:text-[#FF8C42] transition-colors"
+          >
             <span className="text-gray-800 font-semibold">隐私设置</span>
           </button>
-          <button className="w-full text-left py-3 border-b border-[#E8E8E6] hover:text-[#FF8C42] transition-colors">
+          <button
+            onClick={() => setLocation('/settings/notifications')}
+            className="w-full text-left py-3 border-b border-[#E8E8E6] hover:text-[#FF8C42] transition-colors"
+          >
             <span className="text-gray-800 font-semibold">通知设置</span>
           </button>
-          <button className="w-full text-left py-3 hover:text-[#FF8C42] transition-colors">
+          <button
+            onClick={() => setLocation('/settings/about')}
+            className="w-full text-left py-3 hover:text-[#FF8C42] transition-colors"
+          >
             <span className="text-gray-800 font-semibold">关于我们</span>
           </button>
         </div>

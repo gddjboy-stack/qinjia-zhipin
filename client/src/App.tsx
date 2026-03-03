@@ -14,6 +14,10 @@ import Contact from "./pages/Contact";
 import Profile from "./pages/Profile";
 import BottomNav from "./components/BottomNav";
 import Analytics from "./pages/Analytics";
+import SettingsIndex from "./pages/Settings/Index";
+import SettingsPrivacy from "./pages/Settings/Privacy";
+import SettingsNotifications from "./pages/Settings/Notifications";
+import SettingsAbout from "./pages/Settings/About";
 
 
 function Router() {
@@ -44,6 +48,10 @@ function Router() {
         <Route path={"/contact/:id"} component={Contact} />
         <Route path={"/me"} component={Profile} />
         <Route path={"/analytics"} component={Analytics} />
+        <Route path={"/settings"} component={SettingsIndex} />
+        <Route path={"/settings/privacy"} component={SettingsPrivacy} />
+        <Route path={"/settings/notifications"} component={SettingsNotifications} />
+        <Route path={"/settings/about"} component={SettingsAbout} />
         <Route path={"/404"} component={NotFound} />
         {/* Final fallback route */}
         <Route component={NotFound} />

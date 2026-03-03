@@ -199,7 +199,7 @@ const mockProfiles: ProfileCard[] = [
 
 export default function Home() {
   const [, setLocation] = useLocation();
-  const { userProfile, contactRequests, genderFilter, setGenderFilter } = useData();
+  const { userProfile, contactRequests, genderFilter, setGenderFilter, userSettings } = useData();
   const [likedProfiles, setLikedProfiles] = useState<Set<string>>(new Set());
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [userId, setUserId] = useState<string>('');
@@ -438,6 +438,7 @@ export default function Home() {
         {filteredProfiles.length > 0 ? (
           filteredProfiles.map((profile, index) => {
             const isUserProfile = userProfile && profile.id === userProfile.id;
+            const currentUserSettings = userSettings;
 
             return (
               <div
@@ -615,11 +616,18 @@ export default function Home() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setLocation(`/contact/${profile.id}`);
+                        if (!isUserProfile && currentUserSettings.privacy.allowApplications) {
+                          setLocation(`/contact/${profile.id}`);
+                        }
                       }}
-                      className="flex-1 py-2 px-3 bg-[#FF8C42] hover:bg-[#FF7A2F] text-white rounded-lg font-semibold transition-colors"
+                      disabled={isUserProfile || !currentUserSettings.privacy.allowApplications}
+                      className={`flex-1 py-2 px-3 rounded-lg font-semibold transition-colors ${
+                        isUserProfile || !currentUserSettings.privacy.allowApplications
+                          ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                          : 'bg-[#FF8C42] hover:bg-[#FF7A2F] text-white'
+                      }`}
                     >
-                      申请联系
+                      {isUserProfile ? '我的资料' : currentUserSettings.privacy.allowApplications ? '申请联系' : '已关闭申请'}
                     </button>
                   </div>
                 </div>

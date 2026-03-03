@@ -1,6 +1,6 @@
 /**
  * Data Context - 全局数据管理
- * 使用 localStorage 保存用户发布的资料信息和未读消息
+ * 使用 localStorage 保存用户发布的资料信息、未读消息和用户设置
  */
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
@@ -52,6 +52,21 @@ export interface ContactRequest {
   isRead: boolean;
 }
 
+export interface UserSettings {
+  privacy: {
+    pauseReceivingApplications: boolean;  // 总开关：暂停接收申请
+    showProfile: boolean;                  // 显示我的资料
+    allowApplications: boolean;            // 接收申请
+    showLocation: boolean;                 // 显示位置信息
+    showContact: boolean;                  // 显示联系方式
+  };
+  notifications: {
+    newApplications: boolean;              // 新申请通知
+    messageReplies: boolean;               // 消息回复通知（占位符）
+    recommendations: boolean;              // 推荐更新通知（占位符）
+  };
+}
+
 interface DataContextType {
   userProfile: UserPublishedProfile | null;
   publishProfile: (profile: Omit<UserPublishedProfile, 'id' | 'userId' | 'publishedAt' | 'isVerified'>) => void;
@@ -66,6 +81,9 @@ interface DataContextType {
   setGenderFilter: (gender: 'female' | 'male') => void;
   isFirstVisit: boolean;
   markFirstVisitDone: () => void;
+  userSettings: UserSettings;
+  updatePrivacySettings: (settings: Partial<UserSettings['privacy']>) => void;
+  updateNotificationSettings: (settings: Partial<UserSettings['notifications']>) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -75,6 +93,23 @@ const CONTACTS_STORAGE_KEY = 'qinjia_contact_requests';
 const GENDER_FILTER_KEY = 'qinjia_gender_filter';
 const FIRST_VISIT_KEY = 'qinjia_first_visit_shown';
 const USER_ID_KEY = 'qinjia_user_id';
+const SETTINGS_STORAGE_KEY = 'qinjia_user_settings';
+
+// 默认设置
+const DEFAULT_SETTINGS: UserSettings = {
+  privacy: {
+    pauseReceivingApplications: false,
+    showProfile: true,
+    allowApplications: true,
+    showLocation: true,
+    showContact: true
+  },
+  notifications: {
+    newApplications: true,
+    messageReplies: true,
+    recommendations: true
+  }
+};
 
 // 生成UUID
 function generateUUID(): string {
@@ -89,6 +124,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [genderFilter, setGenderFilter] = useState<'female' | 'male'>('female');
   const [isFirstVisit, setIsFirstVisit] = useState(true);
   const [userId, setUserId] = useState<string>('');
+  const [userSettings, setUserSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
 
   // 从 localStorage 加载数据
   useEffect(() => {
@@ -135,6 +171,20 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     // 检查是否是首次访问
     const firstVisitShown = localStorage.getItem(FIRST_VISIT_KEY);
     setIsFirstVisit(!firstVisitShown);
+
+    // 加载用户设置
+    const storedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    if (storedSettings) {
+      try {
+        const settings = JSON.parse(storedSettings);
+        setUserSettings(settings);
+      } catch (error) {
+        console.error('Failed to parse stored settings:', error);
+        setUserSettings(DEFAULT_SETTINGS);
+      }
+    } else {
+      setUserSettings(DEFAULT_SETTINGS);
+    }
   }, []);
 
   const publishProfile = (profile: Omit<UserPublishedProfile, 'id' | 'userId' | 'publishedAt' | 'isVerified'>) => {
@@ -206,6 +256,30 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setIsFirstVisit(false);
   };
 
+  const updatePrivacySettings = (settings: Partial<UserSettings['privacy']>) => {
+    const updatedSettings: UserSettings = {
+      ...userSettings,
+      privacy: {
+        ...userSettings.privacy,
+        ...settings
+      }
+    };
+    setUserSettings(updatedSettings);
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(updatedSettings));
+  };
+
+  const updateNotificationSettings = (settings: Partial<UserSettings['notifications']>) => {
+    const updatedSettings: UserSettings = {
+      ...userSettings,
+      notifications: {
+        ...userSettings.notifications,
+        ...settings
+      }
+    };
+    setUserSettings(updatedSettings);
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(updatedSettings));
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -221,7 +295,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         genderFilter,
         setGenderFilter,
         isFirstVisit,
-        markFirstVisitDone
+        markFirstVisitDone,
+        userSettings,
+        updatePrivacySettings,
+        updateNotificationSettings
       }}
     >
       {children}
