@@ -355,6 +355,17 @@ export default function Publish() {
                 onChange={handleInputChange}
               />
             </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">孩子居住地</label>
+              <Input
+                type="text"
+                name="childLocation"
+                placeholder="例如：北京"
+                value={formData.childLocation}
+                onChange={handleInputChange}
+              />
+            </div>
           </div>
         </div>
 
