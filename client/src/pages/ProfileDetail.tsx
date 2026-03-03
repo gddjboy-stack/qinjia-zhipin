@@ -13,6 +13,7 @@ import { useLocation } from 'wouter';
 import { ArrowLeft, MapPin, Briefcase, BookOpen, CheckCircle, Phone, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
+import { useData } from '@/contexts/DataContext';
 
 interface ProfileDetail {
   id: string;
@@ -159,8 +160,31 @@ export default function ProfileDetail() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const [isLiked, setIsLiked] = useState(false);
+  const { userProfile } = useData();
 
-  const profile = mockProfileDetails[id || '1'];
+  let profile = null;
+  
+  if (userProfile && userProfile.id === id) {
+    profile = {
+      id: userProfile.id,
+      childName: userProfile.childName,
+      childAge: userProfile.childAge,
+      childGender: userProfile.childGender,
+      childZodiac: userProfile.zodiacSign || 'unknown',
+      childEducation: userProfile.childEducation,
+      childOccupation: userProfile.childOccupation,
+      childIncome: userProfile.annualIncome,
+      childLocation: userProfile.childLocation,
+      childDescription: userProfile.childDescription,
+      parentName: userProfile.parentName,
+      parentPhone: '****',
+      parentLocation: userProfile.childLocation,
+      isVerified: userProfile.isVerified,
+      profileImage: userProfile.profileImage
+    };
+  } else {
+    profile = mockProfileDetails[id || '1'];
+  }
 
   if (!profile) {
     return (
