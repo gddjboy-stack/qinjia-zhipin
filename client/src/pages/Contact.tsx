@@ -2,6 +2,8 @@
  * Contact Page - 申请联系页
  * 用户可以在此申请与目标用户联系
  * 申请提交后会保存到全局状态，并在首页显示未读提醒
+ * 
+ * 完整方案：正确记录申请者和被申请者的用户ID，为升级Pro版本做准备
  */
 
 import { useParams } from 'wouter';
@@ -9,20 +11,21 @@ import { useLocation } from 'wouter';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useData } from '@/contexts/DataContext';
 import { trackEvent, ANALYTICS_EVENTS } from '@/lib/analytics';
 
 // Mock profile data to get contact info
-const mockProfiles: Record<string, { childName: string; parentName: string }> = {
-  '1': { childName: '李明', parentName: '李女士' },
-  '2': { childName: '王芳', parentName: '王先生' },
-  '3': { childName: '张浩', parentName: '张女士' },
-  '4': { childName: '陈思', parentName: '陈先生' },
-  '5': { childName: '刘军', parentName: '刘女士' },
-  '6': { childName: '周丽', parentName: '周女士' },
-  '7': { childName: '吴涛', parentName: '吴先生' }
+// 注意：每个profile都有一个userId，用于区分不同的用户
+const mockProfiles: Record<string, { childName: string; parentName: string; userId: string }> = {
+  '1': { childName: '李明', parentName: '李女士', userId: 'mock_user_1' },
+  '2': { childName: '王芳', parentName: '王先生', userId: 'mock_user_2' },
+  '3': { childName: '张浩', parentName: '张女士', userId: 'mock_user_3' },
+  '4': { childName: '陈思', parentName: '陈先生', userId: 'mock_user_4' },
+  '5': { childName: '刘军', parentName: '刘女士', userId: 'mock_user_5' },
+  '6': { childName: '周丽', parentName: '周女士', userId: 'mock_user_6' },
+  '7': { childName: '吴涛', parentName: '吴先生', userId: 'mock_user_7' }
 };
 
 export default function Contact() {
@@ -31,8 +34,17 @@ export default function Contact() {
   const { addContactRequest, userProfile } = useData();
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [userId, setUserId] = useState<string>('');
 
-  const targetProfile = mockProfiles[id || ''] || { childName: '用户', parentName: '家长' };
+  // 从localStorage获取当前用户ID
+  useEffect(() => {
+    const storedUserId = localStorage.getItem('qinjia_user_id');
+    if (storedUserId) {
+      setUserId(storedUserId);
+    }
+  }, []);
+
+  const targetProfile = mockProfiles[id || ''] || { childName: '用户', parentName: '家长', userId: 'unknown' };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,14 +72,16 @@ export default function Contact() {
     // Simulate API call
     setTimeout(() => {
       // 添加联系申请到全局状态
-      // 注意：fromProfileId是申请者（用户自己），toProfileId是被申请者（目标用户）
+      // 完整方案：正确记录申请者(fromUserId)和被申请者(toUserId)的用户ID
       addContactRequest({
-        fromProfileId: userProfile?.id || 'unknown',  // 申请者是用户自己
+        fromUserId: userId,                        // 申请者的用户ID（当前用户）
+        fromProfileId: userProfile?.id || 'unknown',  // 申请者的资料ID
         fromParentName: userProfile?.parentName || '未知',  // 申请者的家长名字
         fromChildName: userProfile?.childName || '未知',    // 申请者的孩子名字
-        toProfileId: id || '',  // 被申请者是目标用户
-        toParentName: targetProfile.parentName,  // 被申请者的家长名字
-        toChildName: targetProfile.childName,    // 被申请者的孩子名字
+        toUserId: targetProfile.userId,            // 被申请者的用户ID（目标用户）
+        toProfileId: id || '',                     // 被申请者的资料ID
+        toParentName: targetProfile.parentName,    // 被申请者的家长名字
+        toChildName: targetProfile.childName,      // 被申请者的孩子名字
         message: message
       });
 

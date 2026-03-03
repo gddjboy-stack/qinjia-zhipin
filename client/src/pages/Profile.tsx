@@ -2,6 +2,8 @@
  * Profile Page - 个人中心
  * 显示用户发布的资料信息，或在未发布时显示空白提示
  * 与Publish页面联动，保持数据一致
+ * 
+ * 完整方案：只显示发送给当前用户的申请
  */
 
 import { useLocation } from 'wouter';
@@ -9,10 +11,12 @@ import { LogOut, Edit2, Heart, MessageCircle, Settings, Bell, Plus } from 'lucid
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 import { useData } from '@/contexts/DataContext';
+import type { ContactRequest } from '@/contexts/DataContext';
 
 export default function Profile() {
   const [, setLocation] = useLocation();
   const { userProfile, contactRequests, markAllAsRead, unreadCount } = useData();
+  const [userId, setUserId] = useState<string>('');
   const [userInfo] = useState({
     name: '李女士',
     phone: '138****1234',
@@ -21,12 +25,25 @@ export default function Profile() {
     isVerified: true
   });
 
+  // 从localStorage获取当前用户ID
+  useEffect(() => {
+    const storedUserId = localStorage.getItem('qinjia_user_id');
+    if (storedUserId) {
+      setUserId(storedUserId);
+    }
+  }, []);
+
   // 当用户进入个人中心时，标记所有消息为已读
   useEffect(() => {
     if (unreadCount > 0) {
       markAllAsRead();
     }
   }, []);
+
+  // 只显示发送给当前用户的申请
+  const incomingRequests: ContactRequest[] = contactRequests.filter(
+    (req) => req.toUserId === userId
+  );
 
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -165,12 +182,12 @@ export default function Profile() {
       <div className="px-4 mb-6">
         <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
           <MessageCircle size={20} className="text-[#FF8C42]" />
-          收到的联系申请 ({contactRequests.length})
+          收到的联系申请 ({incomingRequests.length})
         </h3>
 
-        {contactRequests.length > 0 ? (
+        {incomingRequests.length > 0 ? (
           <div className="space-y-3">
-            {contactRequests.map((request) => (
+            {incomingRequests.map((request) => (
               <div key={request.id} className="warm-card border-l-4 border-[#FF8C42]">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">

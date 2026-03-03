@@ -11,6 +11,7 @@
  */
 
 import { useState, useMemo, useEffect } from 'react';
+import React from 'react';
 import { Heart, MapPin, Briefcase, BookOpen, CheckCircle, Filter, Sparkles, Bell, Home as HomeIcon, Car, Shield, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLocation } from 'wouter';
@@ -18,6 +19,7 @@ import FilterPanel, { FilterOptions } from '@/components/FilterPanel';
 import VerificationModal from '@/components/VerificationModal';
 
 import { useData } from '@/contexts/DataContext';
+import type { ContactRequest } from '@/contexts/DataContext';
 import { trackEvent, ANALYTICS_EVENTS } from '@/lib/analytics';
 
 interface ProfileCard {
@@ -197,9 +199,10 @@ const mockProfiles: ProfileCard[] = [
 
 export default function Home() {
   const [, setLocation] = useLocation();
-  const { userProfile, unreadCount, genderFilter, setGenderFilter } = useData();
+  const { userProfile, contactRequests, genderFilter, setGenderFilter } = useData();
   const [likedProfiles, setLikedProfiles] = useState<Set<string>>(new Set());
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [userId, setUserId] = useState<string>('');
   const [filters, setFilters] = useState<FilterOptions>({
     ageMin: 18,
     ageMax: 60,
@@ -208,6 +211,19 @@ export default function Home() {
     education: ''
   });
   const [sortBy, setSortBy] = useState<'newest' | 'age'>('newest');
+
+  // 从localStorage获取当前用户ID
+  React.useEffect(() => {
+    const storedUserId = localStorage.getItem('qinjia_user_id');
+    if (storedUserId) {
+      setUserId(storedUserId);
+    }
+  }, []);
+
+  // 计算只发送给当前用户的未读消息数
+  const unreadCount = contactRequests.filter(
+    (req) => !req.isRead && req.toUserId === userId
+  ).length;
   const [verificationModal, setVerificationModal] = useState<{ isOpen: boolean; profileId?: string }>({ isOpen: false });
 
   // 埋点：页面浏览

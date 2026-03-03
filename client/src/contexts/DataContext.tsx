@@ -7,6 +7,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export interface UserPublishedProfile {
   id: string;
+  userId: string;          // 用户ID，用于区分不同用户
   childName: string;
   childAge: number;
   childGender: 'male' | 'female';
@@ -38,10 +39,12 @@ export interface UserPublishedProfile {
 
 export interface ContactRequest {
   id: string;
-  fromProfileId: string;  // 申请者的ID
+  fromUserId: string;      // 申请者的用户ID
+  fromProfileId: string;   // 申请者的资料ID
   fromParentName: string;  // 申请者的家长名字
   fromChildName: string;   // 申请者的孩子名字
-  toProfileId: string;     // 被申请者的ID
+  toUserId: string;        // 被申请者的用户ID
+  toProfileId: string;     // 被申请者的资料ID
   toParentName: string;    // 被申请者的家长名字
   toChildName: string;     // 被申请者的孩子名字
   message: string;
@@ -51,7 +54,7 @@ export interface ContactRequest {
 
 interface DataContextType {
   userProfile: UserPublishedProfile | null;
-  publishProfile: (profile: Omit<UserPublishedProfile, 'id' | 'publishedAt' | 'isVerified'>) => void;
+  publishProfile: (profile: Omit<UserPublishedProfile, 'id' | 'userId' | 'publishedAt' | 'isVerified'>) => void;
   clearProfile: () => void;
   hasPublishedProfile: boolean;
   contactRequests: ContactRequest[];
@@ -71,6 +74,12 @@ const PROFILE_STORAGE_KEY = 'qinjia_user_profile';
 const CONTACTS_STORAGE_KEY = 'qinjia_contact_requests';
 const GENDER_FILTER_KEY = 'qinjia_gender_filter';
 const FIRST_VISIT_KEY = 'qinjia_first_visit_shown';
+const USER_ID_KEY = 'qinjia_user_id';
+
+// 生成UUID
+function generateUUID(): string {
+  return 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserPublishedProfile | null>(null);
@@ -79,9 +88,18 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [genderFilter, setGenderFilter] = useState<'female' | 'male'>('female');
   const [isFirstVisit, setIsFirstVisit] = useState(true);
+  const [userId, setUserId] = useState<string>('');
 
   // 从 localStorage 加载数据
   useEffect(() => {
+    // 加载或创建用户ID
+    let storedUserId = localStorage.getItem(USER_ID_KEY);
+    if (!storedUserId) {
+      storedUserId = generateUUID();
+      localStorage.setItem(USER_ID_KEY, storedUserId);
+    }
+    setUserId(storedUserId);
+
     // 加载用户资料
     const storedProfile = localStorage.getItem(PROFILE_STORAGE_KEY);
     if (storedProfile) {
@@ -100,8 +118,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       try {
         const contacts = JSON.parse(storedContacts);
         setContactRequests(contacts);
-        // 计算未读数量
-        const unread = contacts.filter((c: ContactRequest) => !c.isRead).length;
+        // 计算未读数量：只统计发送给当前用户的未读消息
+        const unread = contacts.filter((c: ContactRequest) => !c.isRead && c.toUserId === storedUserId).length;
         setUnreadCount(unread);
       } catch (error) {
         console.error('Failed to parse stored contacts:', error);
@@ -119,10 +137,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setIsFirstVisit(!firstVisitShown);
   }, []);
 
-  const publishProfile = (profile: Omit<UserPublishedProfile, 'id' | 'publishedAt' | 'isVerified'>) => {
+  const publishProfile = (profile: Omit<UserPublishedProfile, 'id' | 'userId' | 'publishedAt' | 'isVerified'>) => {
     const newProfile: UserPublishedProfile = {
       ...profile,
-      id: `user_${Date.now()}`,
+      id: `profile_${Date.now()}`,
+      userId: userId,  // 使用当前用户ID
       publishedAt: new Date().toISOString(),
       isVerified: false
     };
@@ -148,7 +167,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     const updatedRequests = [newRequest, ...contactRequests];
     setContactRequests(updatedRequests);
-    setUnreadCount(prev => prev + 1);
+    // 只在消息发送给当前用户时增加未读计数
+    if (newRequest.toUserId === userId) {
+      setUnreadCount(prev => prev + 1);
+    }
     localStorage.setItem(CONTACTS_STORAGE_KEY, JSON.stringify(updatedRequests));
   };
 
@@ -157,13 +179,19 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       req.id === requestId ? { ...req, isRead: true } : req
     );
     setContactRequests(updatedRequests);
-    setUnreadCount(prev => Math.max(0, prev - 1));
+    // 只在标记发送给当前用户的消息时减少未读计数
+    const request = contactRequests.find(r => r.id === requestId);
+    if (request && request.toUserId === userId && !request.isRead) {
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    }
     localStorage.setItem(CONTACTS_STORAGE_KEY, JSON.stringify(updatedRequests));
   };
 
   const markAllAsRead = () => {
     const updatedRequests = contactRequests.map(req => ({ ...req, isRead: true }));
     setContactRequests(updatedRequests);
+    // 只清空发送给当前用户的未读消息
+    const unreadToCurrentUser = contactRequests.filter(c => !c.isRead && c.toUserId === userId).length;
     setUnreadCount(0);
     localStorage.setItem(CONTACTS_STORAGE_KEY, JSON.stringify(updatedRequests));
   };
