@@ -165,6 +165,11 @@ export default function ProfileDetail() {
   let profile = null;
   
   if (userProfile && userProfile.id === id) {
+    // 生成隐藏后的电话号码（默认显示，只有关闭设置才隐藏）
+    const displayPhone = userSettings.privacy.showContact 
+      ? userProfile.parentPhone 
+      : userProfile.parentPhone.replace(/(.{3})(.*)(.{4})/, '$1****$3');
+    
     profile = {
       id: userProfile.id,
       childName: userProfile.childName,
@@ -177,8 +182,8 @@ export default function ProfileDetail() {
       childLocation: userSettings.privacy.showLocation ? userProfile.childLocation : '隐私',
       childDescription: userProfile.childDescription,
       parentName: userProfile.parentName,
-      parentPhone: userSettings.privacy.showContact ? '138****1234' : '隐私',
-      parentLocation: userSettings.privacy.showLocation ? userProfile.childLocation : '隐私',
+      parentPhone: displayPhone,
+      parentLocation: userSettings.privacy.showLocation ? userProfile.parentLocation : '隐私',
       isVerified: userProfile.isVerified,
       profileImage: userProfile.profileImage
     };
