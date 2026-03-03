@@ -160,7 +160,7 @@ export default function ProfileDetail() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const [isLiked, setIsLiked] = useState(false);
-  const { userProfile } = useData();
+  const { userProfile, userSettings } = useData();
 
   let profile = null;
   
@@ -174,11 +174,11 @@ export default function ProfileDetail() {
       childEducation: userProfile.childEducation,
       childOccupation: userProfile.childOccupation,
       childIncome: userProfile.annualIncome,
-      childLocation: userProfile.childLocation,
+      childLocation: userSettings.privacy.showLocation ? userProfile.childLocation : '隐私',
       childDescription: userProfile.childDescription,
       parentName: userProfile.parentName,
-      parentPhone: '****',
-      parentLocation: userProfile.childLocation,
+      parentPhone: userSettings.privacy.showContact ? '138****1234' : '隐私',
+      parentLocation: userSettings.privacy.showLocation ? userProfile.childLocation : '隐私',
       isVerified: userProfile.isVerified,
       profileImage: userProfile.profileImage
     };
