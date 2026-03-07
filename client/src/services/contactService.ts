@@ -11,7 +11,7 @@
  * 所有方法均为 async，保持接口一致性
  */
 
-import type { ContactRequest } from '@shared/types';
+import type { ContactRequest, ContactRequestStatus } from '@shared/types';
 import { AppError, Errors } from '@/lib/errors';
 import { getCurrentUserId } from './authService';
 
@@ -56,7 +56,7 @@ export async function getSentContacts(): Promise<ContactRequest[]> {
  * Pro阶段替换为：POST /api/contacts
  */
 export async function addContact(
-  request: Omit<ContactRequest, 'id' | 'timestamp' | 'isRead'>
+  request: Omit<ContactRequest, 'id' | 'timestamp' | 'status'>
 ): Promise<ContactRequest> {
   try {
     const all = await getAllContacts();
@@ -73,7 +73,7 @@ export async function addContact(
       ...request,
       id: `contact_${Date.now()}`,
       timestamp: new Date().toISOString(),
-      isRead: false,
+      status: 'sent',
     };
 
     const updated = [newRequest, ...all];
@@ -86,16 +86,16 @@ export async function addContact(
 }
 
 /**
- * 标记单条申请为已读
- * Pro阶段替换为：PATCH /api/contacts/:id/read
+ * 标记单条申请为已查看（sent → viewed）
+ * Pro阶段替换为：PATCH /api/contacts/:id/status
  */
 export async function markAsRead(requestId: string): Promise<void> {
   try {
     const userId = await getCurrentUserId();
     const all = await getAllContacts();
     const updated = all.map(req =>
-      req.id === requestId && req.toUserId === userId
-        ? { ...req, isRead: true }
+      req.id === requestId && req.toUserId === userId && req.status === 'sent'
+        ? { ...req, status: 'viewed' as ContactRequestStatus }
         : req
     );
     localStorage.setItem(CONTACTS_STORAGE_KEY, JSON.stringify(updated));
@@ -106,7 +106,7 @@ export async function markAsRead(requestId: string): Promise<void> {
 }
 
 /**
- * 标记所有收到的申请为已读
+ * 标记所有收到的申请为已查看
  * Pro阶段替换为：POST /api/contacts/read-all
  */
 export async function markAllAsRead(): Promise<void> {
@@ -114,7 +114,9 @@ export async function markAllAsRead(): Promise<void> {
     const userId = await getCurrentUserId();
     const all = await getAllContacts();
     const updated = all.map(req =>
-      req.toUserId === userId ? { ...req, isRead: true } : req
+      req.toUserId === userId && req.status === 'sent'
+        ? { ...req, status: 'viewed' as ContactRequestStatus }
+        : req
     );
     localStorage.setItem(CONTACTS_STORAGE_KEY, JSON.stringify(updated));
   } catch (error) {
@@ -124,13 +126,39 @@ export async function markAllAsRead(): Promise<void> {
 }
 
 /**
- * 计算当前用户的未读申请数量
+ * 计算当前用户的未读申请数量（status === 'sent' 表示未查看）
  * Pro阶段替换为：GET /api/contacts/unread-count
  */
 export async function getUnreadCount(): Promise<number> {
   const userId = await getCurrentUserId();
   const all = await getAllContacts();
-  return all.filter(c => c.toUserId === userId && !c.isRead).length;
+  return all.filter(c => c.toUserId === userId && c.status === 'sent').length;
+}
+
+/**
+ * 更新申请状态（接受/拒绝/撤回）
+ * Pro阶段替换为：PATCH /api/contacts/:id/status
+ */
+export async function updateContactStatus(
+  requestId: string,
+  newStatus: ContactRequestStatus
+): Promise<void> {
+  try {
+    const userId = await getCurrentUserId();
+    const all = await getAllContacts();
+    const updated = all.map(req => {
+      if (req.id !== requestId) return req;
+      // 接受/拒绝只能由被申请方操作
+      if ((newStatus === 'accepted' || newStatus === 'rejected') && req.toUserId !== userId) return req;
+      // 撤回只能由申请方操作
+      if (newStatus === 'cancelled' && req.fromUserId !== userId) return req;
+      return { ...req, status: newStatus };
+    });
+    localStorage.setItem(CONTACTS_STORAGE_KEY, JSON.stringify(updated));
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw Errors.STORAGE();
+  }
 }
 
 /**

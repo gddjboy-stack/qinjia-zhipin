@@ -37,6 +37,8 @@ export interface UserPublishedProfile {
   verificationDate?: string;
 }
 
+export type ContactRequestStatus = 'sent' | 'viewed' | 'accepted' | 'rejected' | 'cancelled';
+
 export interface ContactRequest {
   id: string;
   fromUserId: string;
@@ -49,9 +51,15 @@ export interface ContactRequest {
   toChildName: string;
   message: string;
   timestamp: string;
-  // 注意：isRead 字段将在 Step 4 升级为 status 字段
-  // status: 'sent' | 'viewed' | 'replied' | 'accepted' | 'rejected' | 'cancelled'
-  isRead: boolean;
+  /**
+   * 申请状态流转：
+   * - sent: 已发送（初始状态）
+   * - viewed: 对方已查看
+   * - accepted: 对方已接受（可查看联系方式）
+   * - rejected: 对方已拒绝
+   * - cancelled: 申请方已撤回
+   */
+  status: ContactRequestStatus;
 }
 
 export interface UserSettings {

@@ -187,7 +187,7 @@ export default function Profile() {
                     <h4 className="font-bold text-gray-800">{request.fromChildName}</h4>
                     <p className="text-sm text-gray-600">{request.fromParentName}的孩子</p>
                   </div>
-                  {!request.isRead && (
+                  {request.status === 'sent' && (
                     <span className="inline-block w-2 h-2 rounded-full bg-red-500 mt-2"></span>
                   )}
                 </div>

@@ -17,14 +17,16 @@ import {
   markAsRead as serviceMarkAsRead,
   markAllAsRead as serviceMarkAllAsRead,
   getUnreadCount as serviceGetUnreadCount,
+  updateContactStatus as serviceUpdateContactStatus,
 } from '@/services/contactService';
-import type { ContactRequest } from '@shared/types';
+import type { ContactRequest, ContactRequestStatus } from '@shared/types';
 
 interface ContactContextType {
   contactRequests: ContactRequest[];
-  addContactRequest: (request: Omit<ContactRequest, 'id' | 'timestamp' | 'isRead'>) => void;
+  addContactRequest: (request: Omit<ContactRequest, 'id' | 'timestamp' | 'status'>) => void;
   markAsRead: (requestId: string) => void;
   markAllAsRead: () => void;
+  updateContactStatus: (requestId: string, newStatus: ContactRequestStatus) => void;
   unreadCount: number;
 }
 
@@ -52,7 +54,7 @@ export function ContactProvider({ children }: { children: React.ReactNode }) {
   }, [userId]);
 
   const addContactRequest = useCallback(
-    (request: Omit<ContactRequest, 'id' | 'timestamp' | 'isRead'>) => {
+    (request: Omit<ContactRequest, 'id' | 'timestamp' | 'status'>) => {
       async function doAdd() {
         try {
           const newRequest = await addContact(request);
@@ -68,7 +70,7 @@ export function ContactProvider({ children }: { children: React.ReactNode }) {
             ...request,
             id: `contact_${Date.now()}`,
             timestamp: new Date().toISOString(),
-            isRead: false,
+            status: 'sent',
           };
           setContactRequests(prev => [fallback, ...prev]);
           if (fallback.toUserId === userId) {
@@ -91,11 +93,15 @@ export function ContactProvider({ children }: { children: React.ReactNode }) {
         try {
           await serviceMarkAsRead(requestId);
           setContactRequests(prev =>
-            prev.map(req => (req.id === requestId ? { ...req, isRead: true } : req))
+            prev.map(req =>
+              req.id === requestId && req.status === 'sent'
+                ? { ...req, status: 'viewed' as ContactRequestStatus }
+                : req
+            )
           );
-          // 只在标记发送给当前用户的消息时减少未读计数
+          // 只在标记发送给当前用户的未查看消息时减少计数
           const request = contactRequests.find(r => r.id === requestId);
-          if (request && request.toUserId === userId && !request.isRead) {
+          if (request && request.toUserId === userId && request.status === 'sent') {
             setUnreadCount(prev => Math.max(0, prev - 1));
           }
         } catch (error) {
@@ -112,7 +118,11 @@ export function ContactProvider({ children }: { children: React.ReactNode }) {
       try {
         await serviceMarkAllAsRead();
         setContactRequests(prev =>
-          prev.map(req => (req.toUserId === userId ? { ...req, isRead: true } : req))
+          prev.map(req =>
+            req.toUserId === userId && req.status === 'sent'
+              ? { ...req, status: 'viewed' as ContactRequestStatus }
+              : req
+          )
         );
         setUnreadCount(0);
       } catch (error) {
@@ -122,6 +132,24 @@ export function ContactProvider({ children }: { children: React.ReactNode }) {
     doMarkAll();
   }, [userId]);
 
+  const updateContactStatus = useCallback(
+    (requestId: string, newStatus: ContactRequestStatus) => {
+      async function doUpdate() {
+        try {
+          await serviceUpdateContactStatus(requestId, newStatus);
+          setContactRequests(prev =>
+            prev.map(req => (req.id === requestId ? { ...req, status: newStatus } : req))
+          );
+          // 如果是接受/拒绝，不影响未读计数（已经在 markAsRead 时处理过）
+        } catch (error) {
+          console.error('[ContactContext] Failed to update contact status:', error);
+        }
+      }
+      doUpdate();
+    },
+    []
+  );
+
   return (
     <ContactContext.Provider
       value={{
@@ -129,6 +157,7 @@ export function ContactProvider({ children }: { children: React.ReactNode }) {
         addContactRequest,
         markAsRead,
         markAllAsRead,
+        updateContactStatus,
         unreadCount,
       }}
     >

@@ -25,6 +25,7 @@ import SettingsIndex from "./pages/Settings/Index";
 import SettingsPrivacy from "./pages/Settings/Privacy";
 import SettingsNotifications from "./pages/Settings/Notifications";
 import SettingsAbout from "./pages/Settings/About";
+import { AuthPage, PricingPage, AdminPage } from "./pages/Placeholder";
 
 
 function Router() {
@@ -59,6 +60,10 @@ function Router() {
         <Route path={"/settings/privacy"} component={SettingsPrivacy} />
         <Route path={"/settings/notifications"} component={SettingsNotifications} />
         <Route path={"/settings/about"} component={SettingsAbout} />
+        {/* Pro 阶段占位路由 - 后续替换为真实页面 */}
+        <Route path={"/auth"} component={AuthPage} />
+        <Route path={"/pricing"} component={PricingPage} />
+        <Route path={"/admin"} component={AdminPage} />
         <Route path={"/404"} component={NotFound} />
         {/* Final fallback route */}
         <Route component={NotFound} />

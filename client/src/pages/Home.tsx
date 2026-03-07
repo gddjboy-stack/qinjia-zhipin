@@ -50,9 +50,9 @@ export default function Home() {
   });
   const [sortBy, setSortBy] = useState<'newest' | 'age'>('newest');
 
-  // 计算只发送给当前用户的未读消息数
+  // 计算只发送给当前用户的未查看消息数（status === 'sent' 表示对方尚未查看）
   const unreadCount = contactRequests.filter(
-    (req) => !req.isRead && req.toUserId === userId
+    (req) => req.status === 'sent' && req.toUserId === userId
   ).length;
   const [verificationModal, setVerificationModal] = useState<{ isOpen: boolean; profileId?: string }>({ isOpen: false });
 
