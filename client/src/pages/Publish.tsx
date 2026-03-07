@@ -180,7 +180,7 @@ export default function Publish() {
     
     // Simulate API call
     setTimeout(() => {
-      // Save to local storage via DataContext
+      // Save via ProfileService (ProfileContext → profileService → localStorage)
       publishProfile({
         childName: formData.childName,
         childAge: parseInt(formData.childAge),

@@ -4,26 +4,12 @@
  */
 
 import { AnalyticsEvent, AnalyticsEventProperties, AnalyticsExport, ANALYTICS_EVENTS } from '@/../../shared/analytics';
+import { getCurrentUserId } from '@/services/authService';
 
 export { ANALYTICS_EVENTS };
 
 const STORAGE_KEY = 'qinjia_analytics_events';
 const SESSION_ID_KEY = 'qinjia_session_id';
-const USER_ID_KEY = 'qinjia_user_id';
-
-/**
- * 获取或创建用户ID
- */
-function getOrCreateUserId(): string {
-  let userId = localStorage.getItem(USER_ID_KEY);
-  
-  if (!userId) {
-    userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    localStorage.setItem(USER_ID_KEY, userId);
-  }
-  
-  return userId;
-}
 
 /**
  * 获取或创建会话ID
@@ -92,26 +78,32 @@ export function trackEvent(
   eventName: string,
   properties: AnalyticsEventProperties = {}
 ): void {
-  const utmParams = getUtmParams();
-  
-  const event: AnalyticsEvent = {
-    event_name: eventName,
-    user_id: getOrCreateUserId(),
-    timestamp: new Date().toISOString(),
-    page_path: window.location.pathname,
-    properties: properties,
-    session_id: getOrCreateSessionId(),
-    utm_source: utmParams.utm_source,
-    utm_medium: utmParams.utm_medium,
-    utm_campaign: utmParams.utm_campaign,
-  };
-  
-  saveEvent(event);
-  
-  // 开发环境下打印日志
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[Analytics]', event);
-  }
+  // fire-and-forget：内部异步获取统一 userId，调用方无需 await
+  // userId 来源统一为 authService.getCurrentUserId()，与 AuthContext 保持一致
+  getCurrentUserId().then(userId => {
+    const utmParams = getUtmParams();
+
+    const event: AnalyticsEvent = {
+      event_name: eventName,
+      user_id: userId,
+      timestamp: new Date().toISOString(),
+      page_path: window.location.pathname,
+      properties: properties,
+      session_id: getOrCreateSessionId(),
+      utm_source: utmParams.utm_source,
+      utm_medium: utmParams.utm_medium,
+      utm_campaign: utmParams.utm_campaign,
+    };
+
+    saveEvent(event);
+
+    // 开发环境下打印日志
+    if (import.meta.env.DEV) {
+      console.log('[Analytics]', event);
+    }
+  }).catch(err => {
+    console.error('[Analytics] Failed to get userId:', err);
+  });
 }
 
 /**
@@ -182,9 +174,10 @@ export function getAnalyticsStats(): {
 
 /**
  * 获取用户ID（用于调试）
+ * 统一使用 authService，与 AuthContext 保持一致
  */
-export function getUserId(): string {
-  return getOrCreateUserId();
+export async function getUserId(): Promise<string> {
+  return getCurrentUserId();
 }
 
 /**
