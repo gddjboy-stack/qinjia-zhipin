@@ -11,40 +11,30 @@ import { useLocation } from 'wouter';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { useData } from '@/contexts/DataContext';
 import { trackEvent, ANALYTICS_EVENTS } from '@/lib/analytics';
-
-// Mock profile data to get contact info
-// 注意：每个profile都有一个userId，用于区分不同的用户
-const mockProfiles: Record<string, { childName: string; parentName: string; userId: string }> = {
-  '1': { childName: '李明', parentName: '李女士', userId: 'mock_user_1' },
-  '2': { childName: '王芳', parentName: '王先生', userId: 'mock_user_2' },
-  '3': { childName: '张浩', parentName: '张女士', userId: 'mock_user_3' },
-  '4': { childName: '陈思', parentName: '陈先生', userId: 'mock_user_4' },
-  '5': { childName: '刘军', parentName: '刘女士', userId: 'mock_user_5' },
-  '6': { childName: '周丽', parentName: '周女士', userId: 'mock_user_6' },
-  '7': { childName: '吴涛', parentName: '吴先生', userId: 'mock_user_7' }
-};
+import { getMockProfileBrief } from '@/lib/mockData';
 
 export default function Contact() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
-  const { addContactRequest, userProfile } = useData();
+  const { userId, addContactRequest, userProfile, contactRequests } = useData();
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [userId, setUserId] = useState<string>('');
 
-  // 从localStorage获取当前用户ID
-  useEffect(() => {
-    const storedUserId = localStorage.getItem('qinjia_user_id');
-    if (storedUserId) {
-      setUserId(storedUserId);
-    }
-  }, []);
-
-  const targetProfile = mockProfiles[id || ''] || { childName: '用户', parentName: '家长', userId: 'unknown' };
+  // 优先从userProfile匹配用户发布的资料，否则从集中管理的mock数据查找
+  let targetProfile: { childName: string; parentName: string; userId: string };
+  if (userProfile && userProfile.id === id) {
+    targetProfile = {
+      childName: userProfile.childName,
+      parentName: userProfile.parentName,
+      userId: userProfile.userId
+    };
+  } else {
+    targetProfile = getMockProfileBrief(id || '') || { childName: '用户', parentName: '家长', userId: 'unknown' };
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,6 +48,15 @@ export default function Contact() {
     if (!userProfile) {
       toast.error('请先发布您的资料后再申请联系');
       setLocation('/publish');
+      return;
+    }
+
+    // 检查是否已经向该资料发送过申请
+    const hasDuplicate = contactRequests.some(
+      req => req.fromUserId === userId && req.toProfileId === id
+    );
+    if (hasDuplicate) {
+      toast.error('您已经向该资料发送过申请，请勿重复发送');
       return;
     }
 

@@ -9,31 +9,14 @@
 import { useLocation } from 'wouter';
 import { LogOut, Edit2, Heart, MessageCircle, Settings, Bell, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useData } from '@/contexts/DataContext';
 import type { ContactRequest } from '@/contexts/DataContext';
-
-type SetLocation = (path: string) => void;
+import { maskPhone } from '@/lib/utils';
 
 export default function Profile() {
   const [, setLocation] = useLocation();
-  const { userProfile, contactRequests, markAllAsRead, unreadCount } = useData();
-  const [userId, setUserId] = useState<string>('');
-  const [userInfo] = useState({
-    name: '李女士',
-    phone: '138****1234',
-    childName: '李明',
-    childAge: 32,
-    isVerified: true
-  });
-
-  // 从localStorage获取当前用户ID
-  useEffect(() => {
-    const storedUserId = localStorage.getItem('qinjia_user_id');
-    if (storedUserId) {
-      setUserId(storedUserId);
-    }
-  }, []);
+  const { userId, userProfile, contactRequests, markAllAsRead, unreadCount } = useData();
 
   // 当用户进入个人中心时，标记所有消息为已读
   useEffect(() => {
@@ -125,7 +108,9 @@ export default function Profile() {
         <div className="space-y-2 border-t border-[#E8E8E6] pt-4">
           <div className="flex justify-between items-center">
             <span className="text-gray-600">联系电话</span>
-            <span className="font-semibold text-gray-800">{userProfile.parentPhone}</span>
+            <span className="font-semibold text-gray-800">
+              {maskPhone(userProfile.parentPhone)}
+            </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-gray-600">孩子</span>

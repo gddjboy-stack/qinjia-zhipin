@@ -68,6 +68,7 @@ export interface UserSettings {
 }
 
 interface DataContextType {
+  userId: string;
   userProfile: UserPublishedProfile | null;
   publishProfile: (profile: Omit<UserPublishedProfile, 'id' | 'userId' | 'publishedAt' | 'isVerified'>) => void;
   clearProfile: () => void;
@@ -238,10 +239,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const markAllAsRead = () => {
-    const updatedRequests = contactRequests.map(req => ({ ...req, isRead: true }));
+    // 只标记发送给当前用户的消息为已读
+    const updatedRequests = contactRequests.map(req => 
+      req.toUserId === userId ? { ...req, isRead: true } : req
+    );
     setContactRequests(updatedRequests);
-    // 只清空发送给当前用户的未读消息
-    const unreadToCurrentUser = contactRequests.filter(c => !c.isRead && c.toUserId === userId).length;
     setUnreadCount(0);
     localStorage.setItem(CONTACTS_STORAGE_KEY, JSON.stringify(updatedRequests));
   };
@@ -283,6 +285,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   return (
     <DataContext.Provider
       value={{
+        userId,
         userProfile,
         publishProfile,
         clearProfile,

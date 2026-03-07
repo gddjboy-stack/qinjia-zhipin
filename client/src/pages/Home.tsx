@@ -11,7 +11,6 @@
  */
 
 import { useState, useMemo, useEffect } from 'react';
-import React from 'react';
 import { Heart, MapPin, Briefcase, BookOpen, CheckCircle, Filter, Sparkles, Bell, Home as HomeIcon, Car, Shield, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLocation } from 'wouter';
@@ -21,188 +20,19 @@ import VerificationModal from '@/components/VerificationModal';
 import { useData } from '@/contexts/DataContext';
 import type { ContactRequest } from '@/contexts/DataContext';
 import { trackEvent, ANALYTICS_EVENTS } from '@/lib/analytics';
+import { mockProfiles as centralMockProfiles, type MockProfile } from '@/lib/mockData';
 
-interface ProfileCard {
-  id: string;
-  childName: string;
-  childAge: number;
-  childGender: 'male' | 'female';
-  childEducation: string;
-  childOccupation: string;
-  childLocation: string;
-  workCity: string;
-  hasHousing: 'yes' | 'no' | 'unknown';
-  hasCar: 'yes' | 'no' | 'unknown';
-  annualIncome: string;
-  nativePlace: string;
-  zodiacSign: string;
-  childDescription: string;
-  parentName: string;
-  isVerified: boolean;
-  profileImage: string;
-  certifications?: {
-    phoneVerified: boolean;
-    idVerified: boolean;
-    profileVerified: boolean;
-  };
-  verificationDate?: string;
-}
-
-// Mock data for MVP - Updated with new fields
-const mockProfiles: ProfileCard[] = [
-  {
-    id: '1',
-    childName: '李明',
-    childAge: 32,
-    childGender: 'male',
-    childEducation: '本科',
-    childOccupation: '软件工程师',
-    childLocation: '北京',
-    workCity: '北京',
-    hasHousing: 'yes',
-    hasCar: 'yes',
-    annualIncome: '50-80万',
-    nativePlace: '山东',
-    zodiacSign: '龙',
-    childDescription: '性格开朗，喜欢运动和旅游，希望找到一个温柔体贴的女性。',
-    parentName: '李女士',
-    isVerified: true,
-    profileImage: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663294512282/7Lo4nggRFmy8FNkeNMysMy/profile-placeholder-ShbPNkLasTbVzht6qnEX9J.webp',
-    certifications: {
-      phoneVerified: true,
-      idVerified: true,
-      profileVerified: true
-    },
-    verificationDate: '2026-02-28'
-  },
-  {
-    id: '2',
-    childName: '王芳',
-    childAge: 28,
-    childGender: 'female',
-    childEducation: '硕士',
-    childOccupation: '医生',
-    childLocation: '上海',
-    workCity: '上海',
-    hasHousing: 'yes',
-    hasCar: 'no',
-    annualIncome: '30-50万',
-    nativePlace: '江苏',
-    zodiacSign: '兔',
-    childDescription: '温柔贤惠，家庭观念强，希望找到一个有责任心的男性。',
-    parentName: '王先生',
-    isVerified: true,
-    profileImage: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663294512282/7Lo4nggRFmy8FNkeNMysMy/profile-placeholder-ShbPNkLasTbVzht6qnEX9J.webp',
-    certifications: {
-      phoneVerified: true,
-      idVerified: true,
-      profileVerified: true
-    },
-    verificationDate: '2026-02-27'
-  },
-  {
-    id: '3',
-    childName: '张浩',
-    childAge: 35,
-    childGender: 'male',
-    childEducation: '本科',
-    childOccupation: '企业管理',
-    childLocation: '深圳',
-    workCity: '深圳',
-    hasHousing: 'yes',
-    hasCar: 'yes',
-    annualIncome: '80-100万',
-    nativePlace: '湖北',
-    zodiacSign: '虎',
-    childDescription: '成熟稳重，事业有成，寻找志同道合的伴侣。',
-    parentName: '张女士',
-    isVerified: false,
-    profileImage: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663294512282/7Lo4nggRFmy8FNkeNMysMy/profile-placeholder-ShbPNkLasTbVzht6qnEX9J.webp'
-  },
-  {
-    id: '4',
-    childName: '陈思',
-    childAge: 26,
-    childGender: 'female',
-    childEducation: '本科',
-    childOccupation: '设计师',
-    childLocation: '杭州',
-    workCity: '杭州',
-    hasHousing: 'no',
-    hasCar: 'no',
-    annualIncome: '20-30万',
-    nativePlace: '浙江',
-    zodiacSign: '马',
-    childDescription: '创意十足，热爱生活，期待遇见有趣的灵魂。',
-    parentName: '陈先生',
-    isVerified: true,
-    profileImage: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663294512282/7Lo4nggRFmy8FNkeNMysMy/profile-placeholder-ShbPNkLasTbVzht6qnEX9J.webp'
-  },
-  {
-    id: '5',
-    childName: '刘军',
-    childAge: 38,
-    childGender: 'male',
-    childEducation: '硕士',
-    childOccupation: '律师',
-    childLocation: '北京',
-    workCity: '北京',
-    hasHousing: 'yes',
-    hasCar: 'yes',
-    annualIncome: '100万以上',
-    nativePlace: '北京',
-    zodiacSign: '蛇',
-    childDescription: '专业素养高，生活品质讲究，寻找志同道合的伴侣。',
-    parentName: '刘女士',
-    isVerified: true,
-    profileImage: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663294512282/7Lo4nggRFmy8FNkeNMysMy/profile-placeholder-ShbPNkLasTbVzht6qnEX9J.webp'
-  },
-  {
-    id: '6',
-    childName: '周丽',
-    childAge: 30,
-    childGender: 'female',
-    childEducation: '大专',
-    childOccupation: '教师',
-    childLocation: '南京',
-    workCity: '南京',
-    hasHousing: 'yes',
-    hasCar: 'yes',
-    annualIncome: '20-30万',
-    nativePlace: '安徽',
-    zodiacSign: '羊',
-    childDescription: '温柔善良，热爱教育工作，希望找到一个稳定可靠的伴侣。',
-    parentName: '周女士',
-    isVerified: true,
-    profileImage: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663294512282/7Lo4nggRFmy8FNkeNMysMy/profile-placeholder-ShbPNkLasTbVzht6qnEX9J.webp'
-  },
-  {
-    id: '7',
-    childName: '吴涛',
-    childAge: 34,
-    childGender: 'male',
-    childEducation: '本科',
-    childOccupation: '销售经理',
-    childLocation: '广州',
-    workCity: '广州',
-    hasHousing: 'no',
-    hasCar: 'yes',
-    annualIncome: '30-50万',
-    nativePlace: '广东',
-    zodiacSign: '猴',
-    childDescription: '外向热情，善于沟通，期待找到一个理解自己的伴侣。',
-    parentName: '吴先生',
-    isVerified: false,
-    profileImage: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663294512282/7Lo4nggRFmy8FNkeNMysMy/profile-placeholder-ShbPNkLasTbVzht6qnEX9J.webp'
-  }
-];
+// 使用集中管理的mock数据，MockProfile包含完整字段
+type ProfileCard = MockProfile;
 
 export default function Home() {
   const [, setLocation] = useLocation();
-  const { userProfile, contactRequests, genderFilter, setGenderFilter, userSettings } = useData();
-  const [likedProfiles, setLikedProfiles] = useState<Set<string>>(new Set());
+  const { userId, userProfile, contactRequests, genderFilter, setGenderFilter, userSettings } = useData();
+  const [likedProfiles, setLikedProfiles] = useState<Set<string>>(() => {
+    const stored = localStorage.getItem('qinjia_liked_profiles');
+    return stored ? new Set(JSON.parse(stored)) : new Set();
+  });
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [userId, setUserId] = useState<string>('');
   const [filters, setFilters] = useState<FilterOptions>({
     ageMin: 18,
     ageMax: 60,
@@ -211,14 +41,6 @@ export default function Home() {
     education: ''
   });
   const [sortBy, setSortBy] = useState<'newest' | 'age'>('newest');
-
-  // 从localStorage获取当前用户ID
-  React.useEffect(() => {
-    const storedUserId = localStorage.getItem('qinjia_user_id');
-    if (storedUserId) {
-      setUserId(storedUserId);
-    }
-  }, []);
 
   // 计算只发送给当前用户的未读消息数
   const unreadCount = contactRequests.filter(
@@ -298,6 +120,7 @@ export default function Home() {
     if (userProfile) {
       result.push({
         id: userProfile.id,
+        userId: userProfile.userId,
         childName: userProfile.childName,
         childAge: userProfile.childAge,
         childGender: userProfile.childGender,
@@ -312,6 +135,8 @@ export default function Home() {
         zodiacSign: userProfile.zodiacSign,
         childDescription: userProfile.childDescription,
         parentName: userProfile.parentName,
+        parentPhone: userProfile.parentPhone,
+        parentLocation: userProfile.parentLocation,
         isVerified: userProfile.isVerified,
         profileImage: userProfile.profileImage,
         certifications: userProfile.certifications,
@@ -320,7 +145,7 @@ export default function Home() {
     }
 
     // 添加其他资料，按性别筛选
-    const otherProfiles = mockProfiles.filter(profile => {
+    const otherProfiles = centralMockProfiles.filter(profile => {
       // 按性别筛选
       if (genderFilter && profile.childGender !== genderFilter) {
         return false;
@@ -591,6 +416,7 @@ export default function Home() {
                           } else {
                             newSet.add(profile.id);
                           }
+                          localStorage.setItem('qinjia_liked_profiles', JSON.stringify(Array.from(newSet)));
                           return newSet;
                         });
                       }}
@@ -616,18 +442,18 @@ export default function Home() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (!isUserProfile && currentUserSettings.privacy.allowApplications) {
+                        if (!isUserProfile) {
                           setLocation(`/contact/${profile.id}`);
                         }
                       }}
-                      disabled={isUserProfile || !currentUserSettings.privacy.allowApplications}
+                      disabled={!!isUserProfile}
                       className={`flex-1 py-2 px-3 rounded-lg font-semibold transition-colors ${
-                        isUserProfile || !currentUserSettings.privacy.allowApplications
+                        isUserProfile
                           ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
                           : 'bg-[#FF8C42] hover:bg-[#FF7A2F] text-white'
                       }`}
                     >
-                      {isUserProfile ? '我的资料' : currentUserSettings.privacy.allowApplications ? '申请联系' : '已关闭申请'}
+                      {isUserProfile ? '我的资料' : '申请联系'}
                     </button>
                   </div>
                 </div>

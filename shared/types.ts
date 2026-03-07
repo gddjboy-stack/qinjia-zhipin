@@ -1,47 +1,69 @@
 /**
  * Shared Type Definitions for QinJia Match
  * 亲家直聘 - 数据模型
+ * 
+ * 注意：此文件与 client/src/contexts/DataContext.tsx 中的接口保持同步
+ * 如需修改接口，必须同时更新两处
  */
 
-export interface User {
-  id: string;
-  name: string;
-  avatar: string;
-  phone?: string;
-  isVerified: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Profile {
+export interface UserPublishedProfile {
   id: string;
   userId: string;
   childName: string;
   childAge: number;
   childGender: 'male' | 'female';
-  childZodiac: string;
   childEducation: string;
   childOccupation: string;
-  childIncome?: string;
   childLocation: string;
+  workCity: string;
+  hasHousing: 'yes' | 'no' | 'unknown';
+  hasCar: 'yes' | 'no' | 'unknown';
+  annualIncome: string;
+  nativePlace: string;
+  zodiacSign: string;
   childDescription: string;
   parentName: string;
   parentPhone: string;
   parentLocation: string;
-  profileImage?: string;
-  createdAt: string;
-  updatedAt: string;
+  profileImage: string;
+  isVerified: boolean;
+  publishedAt: string;
+  certifications: {
+    phoneVerified: boolean;
+    idVerified: boolean;
+    profileVerified: boolean;
+  };
+  verificationDate?: string;
 }
 
-export interface Contact {
+export interface ContactRequest {
   id: string;
   fromUserId: string;
+  fromProfileId: string;
+  fromParentName: string;
+  fromChildName: string;
   toUserId: string;
-  fromProfile: Profile;
-  toProfile: Profile;
-  status: 'pending' | 'accepted' | 'rejected';
-  createdAt: string;
-  updatedAt: string;
+  toProfileId: string;
+  toParentName: string;
+  toChildName: string;
+  message: string;
+  timestamp: string;
+  isRead: boolean;
+}
+
+export interface UserSettings {
+  privacy: {
+    showProfile: boolean;
+    allowApplications: boolean;
+    showLocation: boolean;
+    showContact: boolean;
+    pauseAll: boolean;
+  };
+  notifications: {
+    newApplications: boolean;
+    messageReplies: boolean;
+    recommendations: boolean;
+  };
 }
 
 export interface SearchFilters {
@@ -67,9 +89,11 @@ export const EDUCATION_LEVELS = [
 ];
 
 export const INCOME_RANGES = [
-  '5000以下',
-  '5000-10000',
-  '10000-20000',
-  '20000-50000',
-  '50000以上'
+  '20万以下',
+  '20-30万',
+  '30-50万',
+  '50-80万',
+  '80-100万',
+  '100万以上',
+  '不便透露'
 ];

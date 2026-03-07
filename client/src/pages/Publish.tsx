@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { useData } from '@/contexts/DataContext';
 import { trackEvent, ANALYTICS_EVENTS } from '@/lib/analytics';
+import { isValidPhone } from '@/lib/utils';
 
 const ZODIAC_SIGNS = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪'];
 const INCOME_RANGES = ['20万以下', '20-30万', '30-50万', '50-80万', '80-100万', '100万以上', '不便透露'];
@@ -85,22 +86,58 @@ export default function Publish() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const compressImage = (file: File, maxWidth: number = 800, quality: number = 0.7): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          // 等比例缩放
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('无法创建画布上下文'));
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL('image/jpeg', quality);
+          resolve(compressed);
+        };
+        img.onerror = () => reject(new Error('图片加载失败'));
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => reject(new Error('文件读取失败'));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // 检查文件大小（限制在2MB以内）
-      if (file.size > 2 * 1024 * 1024) {
-        toast.error('图片大小不能超过2MB');
+      // 检查文件大小（限制在5MB以内）
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('图片大小不能超过5MB');
         return;
       }
 
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const base64String = event.target?.result as string;
-        setProfileImage(base64String);
+      try {
+        // 压缩图片到最大800px宽，70%质量
+        const compressed = await compressImage(file, 800, 0.7);
+        setProfileImage(compressed);
         toast.success('图片上传成功');
-      };
-      reader.readAsDataURL(file);
+      } catch {
+        toast.error('图片处理失败，请重试');
+      }
     }
   };
 
@@ -116,12 +153,16 @@ export default function Publish() {
       toast.error('请上传相片');
       return;
     }
-    if (!formData.childName || !formData.childAge || !formData.childEducation || !formData.childOccupation || !formData.workCity || !formData.hasHousing) {
+    if (!formData.childName || !formData.childAge || !formData.childGender || !formData.childEducation || !formData.childOccupation || !formData.workCity || !formData.hasHousing) {
       toast.error('请填写所有必填项');
       return;
     }
     if (!formData.parentName || !formData.parentPhone) {
       toast.error('请填写您的信息');
+      return;
+    }
+    if (!isValidPhone(formData.parentPhone)) {
+      toast.error('请输入有效的11位手机号');
       return;
     }
 
@@ -489,7 +530,7 @@ export default function Publish() {
               <Input
                 type="tel"
                 name="parentPhone"
-                placeholder="例如：138****1234"
+                placeholder="请输入完整手机号，如13812341234"
                 value={formData.parentPhone}
                 onChange={handleInputChange}
                 className="w-full"

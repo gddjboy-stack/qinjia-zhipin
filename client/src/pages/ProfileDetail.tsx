@@ -6,155 +6,19 @@
  * - 详细的信息展示，建立信任感
  * - 清晰的信息层级
  * - 突出的"申请联系"按钮
+ * 
+ * 数据来源：优先从DataContext获取用户资料，否则从集中管理的mockData获取
+ * 字段名统一使用DataContext的UserPublishedProfile接口
  */
 
 import { useParams } from 'wouter';
 import { useLocation } from 'wouter';
-import { ArrowLeft, MapPin, Briefcase, BookOpen, CheckCircle, Phone, Heart } from 'lucide-react';
+import { ArrowLeft, MapPin, Briefcase, BookOpen, CheckCircle, Phone, Heart, Home as HomeIcon, Car } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { useData } from '@/contexts/DataContext';
-
-interface ProfileDetail {
-  id: string;
-  childName: string;
-  childAge: number;
-  childGender: 'male' | 'female';
-  childZodiac: string;
-  childEducation: string;
-  childOccupation: string;
-  childIncome: string;
-  childLocation: string;
-  childDescription: string;
-  parentName: string;
-  parentPhone: string;
-  parentLocation: string;
-  isVerified: boolean;
-  profileImage: string;
-}
-
-// Mock data - 包含所有7个资料
-const mockProfileDetails: Record<string, ProfileDetail> = {
-  '1': {
-    id: '1',
-    childName: '李明',
-    childAge: 32,
-    childGender: 'male',
-    childZodiac: '龙',
-    childEducation: '本科',
-    childOccupation: '软件工程师',
-    childIncome: '50-80万',
-    childLocation: '北京',
-    childDescription: '性格开朗，喜欢运动和旅游，希望找到一个温柔体贴的女性。工作稳定，有房有车，家庭观念强。',
-    parentName: '李女士',
-    parentPhone: '138****1234',
-    parentLocation: '北京',
-    isVerified: true,
-    profileImage: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663294512282/7Lo4nggRFmy8FNkeNMysMy/profile-placeholder-ShbPNkLasTbVzht6qnEX9J.webp'
-  },
-  '2': {
-    id: '2',
-    childName: '王芳',
-    childAge: 28,
-    childGender: 'female',
-    childZodiac: '兔',
-    childEducation: '硕士',
-    childOccupation: '医生',
-    childIncome: '30-50万',
-    childLocation: '上海',
-    childDescription: '温柔贤惠，家庭观念强，希望找到一个有责任心的男性。工作稳定，独立自强。',
-    parentName: '王先生',
-    parentPhone: '139****5678',
-    parentLocation: '上海',
-    isVerified: true,
-    profileImage: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663294512282/7Lo4nggRFmy8FNkeNMysMy/profile-placeholder-ShbPNkLasTbVzht6qnEX9J.webp'
-  },
-  '3': {
-    id: '3',
-    childName: '张浩',
-    childAge: 35,
-    childGender: 'male',
-    childZodiac: '虎',
-    childEducation: '本科',
-    childOccupation: '企业管理',
-    childIncome: '80-100万',
-    childLocation: '深圳',
-    childDescription: '成熟稳重，事业有成，寻找志同道合的伴侣。',
-    parentName: '张女士',
-    parentPhone: '137****9999',
-    parentLocation: '深圳',
-    isVerified: false,
-    profileImage: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663294512282/7Lo4nggRFmy8FNkeNMysMy/profile-placeholder-ShbPNkLasTbVzht6qnEX9J.webp'
-  },
-  '4': {
-    id: '4',
-    childName: '陈思',
-    childAge: 26,
-    childGender: 'female',
-    childZodiac: '马',
-    childEducation: '本科',
-    childOccupation: '设计师',
-    childIncome: '20-30万',
-    childLocation: '杭州',
-    childDescription: '创意十足，热爱生活，期待遇见有趣的灵魂。独立自主，有自己的事业和梦想。',
-    parentName: '陈先生',
-    parentPhone: '136****3333',
-    parentLocation: '杭州',
-    isVerified: true,
-    profileImage: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663294512282/7Lo4nggRFmy8FNkeNMysMy/profile-placeholder-ShbPNkLasTbVzht6qnEX9J.webp'
-  },
-  '5': {
-    id: '5',
-    childName: '刘军',
-    childAge: 38,
-    childGender: 'male',
-    childZodiac: '蛇',
-    childEducation: '硕士',
-    childOccupation: '律师',
-    childIncome: '100万以上',
-    childLocation: '北京',
-    childDescription: '专业素养高，生活品质讲究，寻找志同道合的伴侣。事业有成，家庭观念强。',
-    parentName: '刘女士',
-    parentPhone: '135****4444',
-    parentLocation: '北京',
-    isVerified: true,
-    profileImage: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663294512282/7Lo4nggRFmy8FNkeNMysMy/profile-placeholder-ShbPNkLasTbVzht6qnEX9J.webp'
-  },
-  '6': {
-    id: '6',
-    childName: '周丽',
-    childAge: 30,
-    childGender: 'female',
-    childZodiac: '羊',
-    childEducation: '大专',
-    childOccupation: '教师',
-    childIncome: '20-30万',
-    childLocation: '南京',
-    childDescription: '温柔善良，热爱教育工作，希望找到一个稳定可靠的伴侣。有房有车，生活稳定。',
-    parentName: '周女士',
-    parentPhone: '134****5555',
-    parentLocation: '南京',
-    isVerified: true,
-    profileImage: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663294512282/7Lo4nggRFmy8FNkeNMysMy/profile-placeholder-ShbPNkLasTbVzht6qnEX9J.webp'
-  },
-  '7': {
-    id: '7',
-    childName: '吴涛',
-    childAge: 34,
-    childGender: 'male',
-    childZodiac: '猴',
-    childEducation: '本科',
-    childOccupation: '销售经理',
-    childIncome: '30-50万',
-    childLocation: '广州',
-    childDescription: '外向热情，善于沟通，期待找到一个理解自己的伴侣。有车，生活充满活力。',
-    parentName: '吴先生',
-    parentPhone: '133****6666',
-    parentLocation: '广州',
-    isVerified: false,
-    profileImage: 'https://d2xsxph8kpxj0f.cloudfront.net/310519663294512282/7Lo4nggRFmy8FNkeNMysMy/profile-placeholder-ShbPNkLasTbVzht6qnEX9J.webp'
-  }
-};
+import { maskPhone } from '@/lib/utils';
+import { getMockProfileById } from '@/lib/mockData';
 
 export default function ProfileDetail() {
   const { id } = useParams<{ id: string }>();
@@ -162,24 +26,49 @@ export default function ProfileDetail() {
   const [isLiked, setIsLiked] = useState(false);
   const { userProfile, userSettings } = useData();
 
-  let profile = null;
-  
+  // 统一的资料展示数据结构
+  let profile: {
+    id: string;
+    childName: string;
+    childAge: number;
+    childGender: 'male' | 'female';
+    zodiacSign: string;
+    childEducation: string;
+    childOccupation: string;
+    annualIncome: string;
+    childLocation: string;
+    workCity: string;
+    hasHousing: string;
+    hasCar: string;
+    nativePlace: string;
+    childDescription: string;
+    parentName: string;
+    parentPhone: string;
+    parentLocation: string;
+    isVerified: boolean;
+    profileImage: string;
+  } | null = null;
+
   if (userProfile && userProfile.id === id) {
-    // 生成隐藏后的电话号码（默认显示，只有关闭设置才隐藏）
+    // 用户自己的资料 - 应用隐私设置
     const displayPhone = userSettings.privacy.showContact 
       ? userProfile.parentPhone 
-      : userProfile.parentPhone.replace(/(.{3})(.*)(.{4})/, '$1****$3');
+      : maskPhone(userProfile.parentPhone);
     
     profile = {
       id: userProfile.id,
       childName: userProfile.childName,
       childAge: userProfile.childAge,
       childGender: userProfile.childGender,
-      childZodiac: userProfile.zodiacSign || 'unknown',
+      zodiacSign: userProfile.zodiacSign || '未知',
       childEducation: userProfile.childEducation,
       childOccupation: userProfile.childOccupation,
-      childIncome: userProfile.annualIncome,
+      annualIncome: userProfile.annualIncome,
       childLocation: userSettings.privacy.showLocation ? userProfile.childLocation : '隐私',
+      workCity: userProfile.workCity,
+      hasHousing: userProfile.hasHousing,
+      hasCar: userProfile.hasCar,
+      nativePlace: userProfile.nativePlace,
       childDescription: userProfile.childDescription,
       parentName: userProfile.parentName,
       parentPhone: displayPhone,
@@ -188,7 +77,31 @@ export default function ProfileDetail() {
       profileImage: userProfile.profileImage
     };
   } else {
-    profile = mockProfileDetails[id || '1'];
+    // 从集中管理的mock数据获取
+    const mockProfile = getMockProfileById(id || '');
+    if (mockProfile) {
+      profile = {
+        id: mockProfile.id,
+        childName: mockProfile.childName,
+        childAge: mockProfile.childAge,
+        childGender: mockProfile.childGender,
+        zodiacSign: mockProfile.zodiacSign,
+        childEducation: mockProfile.childEducation,
+        childOccupation: mockProfile.childOccupation,
+        annualIncome: mockProfile.annualIncome,
+        childLocation: mockProfile.childLocation,
+        workCity: mockProfile.workCity,
+        hasHousing: mockProfile.hasHousing,
+        hasCar: mockProfile.hasCar,
+        nativePlace: mockProfile.nativePlace,
+        childDescription: mockProfile.childDescription,
+        parentName: mockProfile.parentName,
+        parentPhone: mockProfile.parentPhone,
+        parentLocation: mockProfile.parentLocation,
+        isVerified: mockProfile.isVerified,
+        profileImage: mockProfile.profileImage
+      };
+    }
   }
 
   if (!profile) {
@@ -201,6 +114,8 @@ export default function ProfileDetail() {
       </div>
     );
   }
+
+  const isOwnProfile = userProfile && userProfile.id === id;
 
   return (
     <div className="min-h-screen bg-[#FAFAF8] pb-24">
@@ -248,7 +163,7 @@ export default function ProfileDetail() {
               <span className="text-lg ml-2 text-gray-600">{profile.childAge}岁</span>
             </h2>
             <p className="text-sm text-gray-600 mt-1">
-              {profile.childGender === 'male' ? '男' : '女'} · 属{profile.childZodiac}
+              {profile.childGender === 'male' ? '男' : '女'} · 属{profile.zodiacSign}
             </p>
           </div>
         </div>
@@ -257,7 +172,7 @@ export default function ProfileDetail() {
         <div className="space-y-3">
           <div className="flex items-center gap-3 p-3 bg-[#F5F5F3] rounded-lg">
             <MapPin size={18} className="text-[#FF8C42]" />
-            <span className="text-gray-800">{profile.childLocation}</span>
+            <span className="text-gray-800">{profile.workCity}</span>
           </div>
           <div className="flex items-center gap-3 p-3 bg-[#F5F5F3] rounded-lg">
             <BookOpen size={18} className="text-[#4A90E2]" />
@@ -278,14 +193,38 @@ export default function ProfileDetail() {
         </div>
       </div>
 
-      {/* More Details */}
+      {/* More Details - 硬通货信息 */}
       <div className="mx-4 mb-4">
         <h3 className="text-lg font-bold text-gray-800 mb-3">更多信息</h3>
         <div className="warm-card space-y-3">
           <div className="flex justify-between items-center pb-3 border-b border-[#E8E8E6]">
             <span className="text-gray-600">年收入</span>
-            <span className="font-semibold text-gray-800">{profile.childIncome}</span>
+            <span className="font-semibold text-gray-800">{profile.annualIncome || '未填写'}</span>
           </div>
+          <div className="flex justify-between items-center pb-3 border-b border-[#E8E8E6]">
+            <span className="text-gray-600 flex items-center gap-1">
+              <HomeIcon className="w-3.5 h-3.5" />
+              住房
+            </span>
+            <span className="font-semibold text-[#FF8C42]">
+              {profile.hasHousing === 'yes' ? '有房' : profile.hasHousing === 'no' ? '无房' : '不便透露'}
+            </span>
+          </div>
+          <div className="flex justify-between items-center pb-3 border-b border-[#E8E8E6]">
+            <span className="text-gray-600 flex items-center gap-1">
+              <Car className="w-3.5 h-3.5" />
+              车产
+            </span>
+            <span className="font-semibold text-gray-800">
+              {profile.hasCar === 'yes' ? '有车' : profile.hasCar === 'no' ? '无车' : '不便透露'}
+            </span>
+          </div>
+          {profile.nativePlace && (
+            <div className="flex justify-between items-center pb-3 border-b border-[#E8E8E6]">
+              <span className="text-gray-600">籍贯</span>
+              <span className="font-semibold text-gray-800">{profile.nativePlace}</span>
+            </div>
+          )}
           <div className="flex justify-between items-center">
             <span className="text-gray-600">居住地</span>
             <span className="font-semibold text-gray-800">{profile.childLocation}</span>
@@ -307,7 +246,9 @@ export default function ProfileDetail() {
           </div>
           <div className="flex justify-between items-center">
             <span className="text-gray-600">联系方式</span>
-            <span className="font-semibold text-gray-800">{profile.parentPhone}</span>
+            <span className="font-semibold text-gray-800">
+              {isOwnProfile ? profile.parentPhone : maskPhone(profile.parentPhone)}
+            </span>
           </div>
         </div>
       </div>
