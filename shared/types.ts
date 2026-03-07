@@ -9,6 +9,7 @@
 export interface UserPublishedProfile {
   id: string;
   userId: string;
+  certificationLevel?: 0 | 1 | 2 | 3;  // 认证等级预留：0=未认证, 1=基础, 2=标准, 3=高级
   childName: string;
   childAge: number;
   childGender: 'male' | 'female';
@@ -48,16 +49,18 @@ export interface ContactRequest {
   toChildName: string;
   message: string;
   timestamp: string;
+  // 注意：isRead 字段将在 Step 4 升级为 status 字段
+  // status: 'sent' | 'viewed' | 'replied' | 'accepted' | 'rejected' | 'cancelled'
   isRead: boolean;
 }
 
 export interface UserSettings {
   privacy: {
+    pauseReceivingApplications: boolean;  // 总开关：暂停接收申请（与DataContext.tsx保持一致）
     showProfile: boolean;
     allowApplications: boolean;
     showLocation: boolean;
     showContact: boolean;
-    pauseAll: boolean;
   };
   notifications: {
     newApplications: boolean;

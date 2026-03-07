@@ -1,9 +1,19 @@
 /**
  * Mock Data - 集中管理所有模拟数据
- * 
+ *
  * 所有页面统一引用此文件，避免数据分散和不一致
  * 字段名与 DataContext.tsx 中的 UserPublishedProfile 接口保持一致
+ *
+ * 开关控制：通过 VITE_MOCK_ENABLED 环境变量控制是否启用 mock 数据
+ * - 开发/演示环境：VITE_MOCK_ENABLED=true
+ * - 生产环境：VITE_MOCK_ENABLED=false（不显示 mock 数据）
  */
+
+/**
+ * Mock数据开关
+ * 默认为 true（未配置环境变量时保持 mock 数据可见）
+ */
+export const MOCK_ENABLED = import.meta.env.VITE_MOCK_ENABLED !== 'false';
 
 // 首页卡片和详情页共用的完整资料接口
 export interface MockProfile {
@@ -25,6 +35,7 @@ export interface MockProfile {
   parentPhone: string;
   parentLocation: string;
   isVerified: boolean;
+  certificationLevel?: 0 | 1 | 2 | 3;  // 认证等级预留
   profileImage: string;
   certifications?: {
     phoneVerified: boolean;
@@ -208,9 +219,18 @@ export const mockProfiles: MockProfile[] = [
 ];
 
 /**
- * 通过ID查找mock资料
+ * 获取所有 mock 资料（支持开关控制）
+ */
+export function getMockProfiles(): MockProfile[] {
+  if (!MOCK_ENABLED) return [];
+  return mockProfiles;
+}
+
+/**
+ * 通过ID查找 mock资料
  */
 export function getMockProfileById(id: string): MockProfile | undefined {
+  if (!MOCK_ENABLED) return undefined;
   return mockProfiles.find(p => p.id === id);
 }
 

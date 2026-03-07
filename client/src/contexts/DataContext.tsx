@@ -19,6 +19,7 @@ export interface UserPublishedProfile {
   parentPhone: string;
   parentLocation: string;
   isVerified: boolean;
+  certificationLevel?: 0 | 1 | 2 | 3;  // 认证等级预留：0=未认证, 1=基础, 2=标准, 3=高级
   profileImage: string;
   publishedAt: string;
   // 父母关心的"硬通货"信息
