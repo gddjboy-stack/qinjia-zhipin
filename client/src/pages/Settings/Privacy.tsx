@@ -7,12 +7,12 @@ import { useLocation } from 'wouter';
 import { ArrowLeft, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
-import { useData } from '@/contexts/DataContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { toast } from 'sonner';
 
 export default function Privacy() {
   const [, setLocation] = useLocation();
-  const { userSettings, updatePrivacySettings } = useData();
+  const { userSettings, updatePrivacySettings } = useSettings();
   const [settings, setSettings] = useState(userSettings.privacy);
 
   useEffect(() => {

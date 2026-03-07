@@ -8,7 +8,7 @@
  * 所有方法均为 async，保持接口一致性
  */
 
-import { UserPublishedProfile } from '@/contexts/DataContext';
+import type { UserPublishedProfile } from '@shared/types';
 import { AppError, Errors, toAppError } from '@/lib/errors';
 import { getCurrentUserId } from './authService';
 

@@ -7,8 +7,8 @@
  * - 清晰的信息层级
  * - 突出的"申请联系"按钮
  * 
- * 数据来源：优先从DataContext获取用户资料，否则从集中管理的mockData获取
- * 字段名统一使用DataContext的UserPublishedProfile接口
+ * 数据来源：优先从ProfileContext获取用户资料，否则从集中管理的mockData获取
+ * 字段名统一使用shared/types.ts的UserPublishedProfile接口
  */
 
 import { useParams } from 'wouter';
@@ -16,7 +16,8 @@ import { useLocation } from 'wouter';
 import { ArrowLeft, MapPin, Briefcase, BookOpen, CheckCircle, Phone, Heart, Home as HomeIcon, Car } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
-import { useData } from '@/contexts/DataContext';
+import { useProfile } from '@/contexts/ProfileContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { maskPhone } from '@/lib/utils';
 import { getMockProfileById } from '@/lib/mockData';
 
@@ -24,7 +25,8 @@ export default function ProfileDetail() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const [isLiked, setIsLiked] = useState(false);
-  const { userProfile, userSettings } = useData();
+  const { userProfile } = useProfile();
+  const { userSettings } = useSettings();
 
   // 统一的资料展示数据结构
   let profile: {

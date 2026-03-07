@@ -8,7 +8,7 @@
  * 所有方法均为 async，保持接口一致性
  */
 
-import { UserSettings } from '@/contexts/DataContext';
+import type { UserSettings } from '@shared/types';
 import { Errors } from '@/lib/errors';
 
 const SETTINGS_STORAGE_KEY = 'qinjia_user_settings';

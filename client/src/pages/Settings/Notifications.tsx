@@ -6,12 +6,12 @@
 import { useLocation } from 'wouter';
 import { ArrowLeft, Bell } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { useData } from '@/contexts/DataContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { toast } from 'sonner';
 
 export default function Notifications() {
   const [, setLocation] = useLocation();
-  const { userSettings, updateNotificationSettings } = useData();
+  const { userSettings, updateNotificationSettings } = useSettings();
   const [settings, setSettings] = useState(userSettings.notifications);
 
   useEffect(() => {

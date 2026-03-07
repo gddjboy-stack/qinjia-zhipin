@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { useData } from '@/contexts/DataContext';
+import { useProfile } from '@/contexts/ProfileContext';
 import { trackEvent, ANALYTICS_EVENTS } from '@/lib/analytics';
 import { isValidPhone } from '@/lib/utils';
 
@@ -23,7 +23,7 @@ const INCOME_RANGES = ['20万以下', '20-30万', '30-50万', '50-80万', '80-10
 
 export default function Publish() {
   const [, setLocation] = useLocation();
-  const { userProfile, publishProfile, clearProfile } = useData();
+  const { userProfile, publishProfile, clearProfile } = useProfile();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [profileImage, setProfileImage] = useState<string>('');

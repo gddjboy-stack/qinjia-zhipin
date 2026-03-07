@@ -13,14 +13,18 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { useData } from '@/contexts/DataContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useProfile } from '@/contexts/ProfileContext';
+import { useContacts } from '@/contexts/ContactContext';
 import { trackEvent, ANALYTICS_EVENTS } from '@/lib/analytics';
 import { getMockProfileBrief } from '@/lib/mockData';
 
 export default function Contact() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
-  const { userId, addContactRequest, userProfile, contactRequests } = useData();
+  const { userId } = useAuth();
+  const { userProfile } = useProfile();
+  const { addContactRequest, contactRequests } = useContacts();
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 

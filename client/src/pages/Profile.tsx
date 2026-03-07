@@ -4,19 +4,25 @@
  * 与Publish页面联动，保持数据一致
  * 
  * 完整方案：只显示发送给当前用户的申请
+ *
+ * Context依赖：useAuth(userId), useProfile(userProfile), useContacts(contactRequests, markAllAsRead, unreadCount)
  */
 
 import { useLocation } from 'wouter';
 import { LogOut, Edit2, Heart, MessageCircle, Settings, Bell, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useEffect } from 'react';
-import { useData } from '@/contexts/DataContext';
-import type { ContactRequest } from '@/contexts/DataContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useProfile } from '@/contexts/ProfileContext';
+import { useContacts } from '@/contexts/ContactContext';
+import type { ContactRequest } from '@shared/types';
 import { maskPhone } from '@/lib/utils';
 
 export default function Profile() {
   const [, setLocation] = useLocation();
-  const { userId, userProfile, contactRequests, markAllAsRead, unreadCount } = useData();
+  const { userId } = useAuth();
+  const { userProfile } = useProfile();
+  const { contactRequests, markAllAsRead, unreadCount } = useContacts();
 
   // 当用户进入个人中心时，标记所有消息为已读
   useEffect(() => {

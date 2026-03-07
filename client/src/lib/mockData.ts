@@ -2,7 +2,7 @@
  * Mock Data - 集中管理所有模拟数据
  *
  * 所有页面统一引用此文件，避免数据分散和不一致
- * 字段名与 DataContext.tsx 中的 UserPublishedProfile 接口保持一致
+ * 字段名与 shared/types.ts 中的 UserPublishedProfile 接口保持一致
  *
  * 开关控制：通过 VITE_MOCK_ENABLED 环境变量控制是否启用 mock 数据
  * - 开发/演示环境：VITE_MOCK_ENABLED=true

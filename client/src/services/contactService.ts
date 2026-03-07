@@ -11,7 +11,7 @@
  * 所有方法均为 async，保持接口一致性
  */
 
-import { ContactRequest } from '@/contexts/DataContext';
+import type { ContactRequest } from '@shared/types';
 import { AppError, Errors } from '@/lib/errors';
 import { getCurrentUserId } from './authService';
 

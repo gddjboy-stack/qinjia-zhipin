@@ -5,7 +5,14 @@ import { Route, Switch, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { DataProvider, useData } from "./contexts/DataContext";
+import { composeProviders } from "./lib/composeProviders";
+
+// 新的拆分Context
+import { AuthProvider } from "./contexts/AuthContext";
+import { ProfileProvider } from "./contexts/ProfileContext";
+import { ContactProvider } from "./contexts/ContactContext";
+import { SettingsProvider, useSettings } from "./contexts/SettingsContext";
+
 import ParentGuideModal from "./components/ParentGuideModal";
 import Home from "./pages/Home";
 import ProfileDetail from "./pages/ProfileDetail";
@@ -21,7 +28,7 @@ import SettingsAbout from "./pages/Settings/About";
 
 
 function Router() {
-  const { isFirstVisit, markFirstVisitDone } = useData();
+  const { isFirstVisit, markFirstVisitDone } = useSettings();
   const [location, setLocation] = useLocation();
   const [showGuide, setShowGuide] = useState(false);
 
@@ -69,6 +76,22 @@ function Router() {
   );
 }
 
+/**
+ * Provider 组合顺序（重要）：
+ * 1. AuthProvider     - 最外层：提供 userId，被所有其他 Context 依赖
+ * 2. SettingsProvider - 依赖 Auth（需要 userId）
+ * 3. ProfileProvider  - 依赖 Auth（需要 userId）
+ * 4. ContactProvider  - 依赖 Auth（需要 userId）
+ *
+ * 新增 Provider 时只需在数组中加一行，不需要修改嵌套结构。
+ */
+const AppProviders = composeProviders([
+  AuthProvider,
+  SettingsProvider,
+  ProfileProvider,
+  ContactProvider,
+]);
+
 // NOTE: About Theme
 // - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
 //   to keep consistent foreground/background color across components
@@ -77,7 +100,7 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
-      <DataProvider>
+      <AppProviders>
         <ThemeProvider
           defaultTheme="light"
           // switchable
@@ -87,7 +110,7 @@ function App() {
             <Router />
           </TooltipProvider>
         </ThemeProvider>
-      </DataProvider>
+      </AppProviders>
     </ErrorBoundary>
   );
 }

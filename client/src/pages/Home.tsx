@@ -8,6 +8,8 @@
  * - 使用暖橙色主色 + 清爽蓝辅色
  * - 充足的留白和柔和阴影，传达关怀感
  * - 新增性别切换功能，让父母快速选择查找儿媳或女婿
+ *
+ * Context依赖：useAuth(userId), useProfile(userProfile), useContacts(contactRequests), useSettings(genderFilter, userSettings)
  */
 
 import { useState, useMemo, useEffect } from 'react';
@@ -17,8 +19,11 @@ import { useLocation } from 'wouter';
 import FilterPanel, { FilterOptions } from '@/components/FilterPanel';
 import VerificationModal from '@/components/VerificationModal';
 
-import { useData } from '@/contexts/DataContext';
-import type { ContactRequest } from '@/contexts/DataContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useProfile } from '@/contexts/ProfileContext';
+import { useContacts } from '@/contexts/ContactContext';
+import { useSettings } from '@/contexts/SettingsContext';
+import type { ContactRequest } from '@shared/types';
 import { trackEvent, ANALYTICS_EVENTS } from '@/lib/analytics';
 import { mockProfiles as centralMockProfiles, type MockProfile } from '@/lib/mockData';
 
@@ -27,7 +32,10 @@ type ProfileCard = MockProfile;
 
 export default function Home() {
   const [, setLocation] = useLocation();
-  const { userId, userProfile, contactRequests, genderFilter, setGenderFilter, userSettings } = useData();
+  const { userId } = useAuth();
+  const { userProfile } = useProfile();
+  const { contactRequests } = useContacts();
+  const { genderFilter, setGenderFilter, userSettings } = useSettings();
   const [likedProfiles, setLikedProfiles] = useState<Set<string>>(() => {
     const stored = localStorage.getItem('qinjia_liked_profiles');
     return stored ? new Set(JSON.parse(stored)) : new Set();
@@ -112,7 +120,7 @@ export default function Home() {
     });
   };
 
-  // 筛选和排序逻辑辑
+  // 筛选和排序逻辑
   const filteredProfiles = useMemo(() => {
     let result: ProfileCard[] = [];
 
