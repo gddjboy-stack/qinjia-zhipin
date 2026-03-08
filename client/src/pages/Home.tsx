@@ -447,22 +447,54 @@ export default function Home() {
                       <Share2 size={18} />
                       邀请
                     </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (!isUserProfile) {
-                          setLocation(`/contact/${profile.id}`);
-                        }
-                      }}
-                      disabled={!!isUserProfile}
-                      className={`flex-1 py-2 px-3 rounded-lg font-semibold transition-colors ${
-                        isUserProfile
-                          ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                          : 'bg-[#FF8C42] hover:bg-[#FF7A2F] text-white'
-                      }`}
-                    >
-                      {isUserProfile ? '我的资料' : '申请联系'}
-                    </button>
+                    {(() => {
+                      // 查找当前用户向该资料发送的申请
+                      const myRequest = contactRequests.find(
+                        (req: ContactRequest) => req.fromUserId === userId && req.toProfileId === profile.id
+                      );
+                      if (isUserProfile) {
+                        return (
+                          <button disabled className="flex-1 py-2 px-3 rounded-lg font-semibold bg-gray-300 text-gray-600 cursor-not-allowed">
+                            我的资料
+                          </button>
+                        );
+                      }
+                      if (myRequest?.status === 'accepted') {
+                        return (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setLocation(`/profile/${profile.id}`); }}
+                            className="flex-1 py-2 px-3 rounded-lg font-semibold bg-green-500 hover:bg-green-600 text-white transition-colors"
+                          >
+                            ✅ 已接受
+                          </button>
+                        );
+                      }
+                      if (myRequest?.status === 'rejected') {
+                        return (
+                          <button disabled className="flex-1 py-2 px-3 rounded-lg font-semibold bg-gray-200 text-gray-500 cursor-not-allowed">
+                            已婉拒
+                          </button>
+                        );
+                      }
+                      if (myRequest?.status === 'sent' || myRequest?.status === 'viewed') {
+                        return (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setLocation(`/profile/${profile.id}`); }}
+                            className="flex-1 py-2 px-3 rounded-lg font-semibold bg-blue-100 text-blue-700 transition-colors"
+                          >
+                            已申请
+                          </button>
+                        );
+                      }
+                      return (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setLocation(`/contact/${profile.id}`); }}
+                          className="flex-1 py-2 px-3 rounded-lg font-semibold bg-[#FF8C42] hover:bg-[#FF7A2F] text-white transition-colors"
+                        >
+                          申请联系
+                        </button>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>

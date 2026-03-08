@@ -81,6 +81,7 @@ export default function Contact() {
         fromProfileId: userProfile?.id || 'unknown',  // 申请者的资料ID
         fromParentName: userProfile?.parentName || '未知',  // 申请者的家长名字
         fromChildName: userProfile?.childName || '未知',    // 申请者的孩子名字
+        fromPhone: userProfile?.parentPhone,               // 申请者电话，accepted 后对被申请方可见
         toUserId: targetProfile.userId,            // 被申请者的用户ID（目标用户）
         toProfileId: id || '',                     // 被申请者的资料ID
         toParentName: targetProfile.parentName,    // 被申请者的家长名字

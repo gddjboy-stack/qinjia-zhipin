@@ -9,15 +9,21 @@
  * 
  * 数据来源：优先从ProfileContext获取用户资料，否则从集中管理的mockData获取
  * 字段名统一使用shared/types.ts的UserPublishedProfile接口
+ * 
+ * accepted 解锁逻辑：
+ * - 当前用户发出的申请被对方接受（status === 'accepted'）→ 展示完整电话号码
+ * - 其他情况 → 脱敏展示（138****8888）
  */
 
 import { useParams } from 'wouter';
 import { useLocation } from 'wouter';
-import { ArrowLeft, MapPin, Briefcase, BookOpen, CheckCircle, Phone, Heart, Home as HomeIcon, Car } from 'lucide-react';
+import { ArrowLeft, MapPin, Briefcase, BookOpen, CheckCircle, Phone, Heart, Home as HomeIcon, Car, Clock, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { useProfile } from '@/contexts/ProfileContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useContacts } from '@/contexts/ContactContext';
 import { maskPhone } from '@/lib/utils';
 import { getMockProfileById } from '@/lib/mockData';
 
@@ -27,6 +33,8 @@ export default function ProfileDetail() {
   const [isLiked, setIsLiked] = useState(false);
   const { userProfile } = useProfile();
   const { userSettings } = useSettings();
+  const { userId } = useAuth();
+  const { contactRequests } = useContacts();
 
   // 统一的资料展示数据结构
   let profile: {
@@ -119,6 +127,38 @@ export default function ProfileDetail() {
 
   const isOwnProfile = userProfile && userProfile.id === id;
 
+  // 查找当前用户向该资料发送的申请
+  const myRequest = contactRequests.find(
+    req => req.fromUserId === userId && req.toProfileId === id
+  );
+
+  // accepted 解锁：当申请被接受时，展示完整电话号码
+  const isAccepted = myRequest?.status === 'accepted';
+  const displayPhone = isOwnProfile
+    ? profile.parentPhone  // 自己的资料：已按隐私设置处理
+    : isAccepted
+      ? profile.parentPhone  // 申请已被接受：展示完整号码
+      : maskPhone(profile.parentPhone);  // 其他情况：脱敏
+
+  // 申请状态信息
+  const getApplicationStatus = () => {
+    if (!myRequest) return null;
+    switch (myRequest.status) {
+      case 'sent':
+        return { icon: <Clock size={16} className="text-blue-500" />, text: '申请已发送，等待对方回复', color: 'bg-blue-50 border-blue-200 text-blue-700' };
+      case 'viewed':
+        return { icon: <Clock size={16} className="text-yellow-500" />, text: '对方已查看您的申请，请耐心等待', color: 'bg-yellow-50 border-yellow-200 text-yellow-700' };
+      case 'accepted':
+        return { icon: <CheckCircle size={16} className="text-green-500" />, text: '申请已被接受！对方电话已解锁', color: 'bg-green-50 border-green-200 text-green-700' };
+      case 'rejected':
+        return { icon: <XCircle size={16} className="text-gray-400" />, text: '对方暂时婉拒了您的申请', color: 'bg-gray-50 border-gray-200 text-gray-500' };
+      default:
+        return null;
+    }
+  };
+
+  const applicationStatus = getApplicationStatus();
+
   return (
     <div className="min-h-screen bg-[#FAFAF8] pb-24">
       {/* Header */}
@@ -141,8 +181,16 @@ export default function ProfileDetail() {
         </button>
       </div>
 
+      {/* 申请状态提示条 */}
+      {applicationStatus && (
+        <div className={`mx-4 mt-4 flex items-center gap-2 border rounded-lg px-4 py-3 ${applicationStatus.color}`}>
+          {applicationStatus.icon}
+          <span className="text-sm font-semibold">{applicationStatus.text}</span>
+        </div>
+      )}
+
       {/* Profile Image */}
-      <div className="relative h-64 bg-gradient-to-br from-[#FF8C42] to-[#FF7A2F] overflow-hidden">
+      <div className="relative h-64 bg-gradient-to-br from-[#FF8C42] to-[#FF7A2F] overflow-hidden mt-4">
         <img
           src={profile.profileImage}
           alt={profile.childName}
@@ -247,11 +295,22 @@ export default function ProfileDetail() {
             <span className="font-semibold text-gray-800">{profile.parentLocation}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-gray-600">联系方式</span>
-            <span className="font-semibold text-gray-800">
-              {isOwnProfile ? profile.parentPhone : maskPhone(profile.parentPhone)}
+            <span className="text-gray-600 flex items-center gap-1">
+              <Phone size={14} />
+              联系方式
             </span>
+            <div className="flex items-center gap-2">
+              {isAccepted && (
+                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">已解锁</span>
+              )}
+              <span className={`font-semibold ${isAccepted ? 'text-green-700 text-base' : 'text-gray-800'}`}>
+                {displayPhone}
+              </span>
+            </div>
           </div>
+          {!isOwnProfile && !isAccepted && (
+            <p className="text-xs text-gray-400 text-right">申请被接受后可查看完整号码</p>
+          )}
         </div>
       </div>
 
@@ -264,12 +323,42 @@ export default function ProfileDetail() {
         >
           返回
         </Button>
-        <Button
-          className="flex-1 bg-[#FF8C42] hover:bg-[#FF7A2F] text-white"
-          onClick={() => setLocation(`/contact/${profile.id}`)}
-        >
-          申请联系
-        </Button>
+        {isOwnProfile ? (
+          <Button
+            className="flex-1 bg-gray-300 text-gray-600 cursor-not-allowed"
+            disabled
+          >
+            我的资料
+          </Button>
+        ) : myRequest && (myRequest.status === 'sent' || myRequest.status === 'viewed') ? (
+          <Button
+            className="flex-1 bg-blue-100 text-blue-700 cursor-not-allowed"
+            disabled
+          >
+            已申请联系
+          </Button>
+        ) : myRequest?.status === 'accepted' ? (
+          <Button
+            className="flex-1 bg-green-500 hover:bg-green-600 text-white"
+            onClick={() => window.open(`tel:${profile!.parentPhone}`)}
+          >
+            📞 拨打电话
+          </Button>
+        ) : myRequest?.status === 'rejected' ? (
+          <Button
+            className="flex-1 bg-gray-300 text-gray-600 cursor-not-allowed"
+            disabled
+          >
+            已婉拒
+          </Button>
+        ) : (
+          <Button
+            className="flex-1 bg-[#FF8C42] hover:bg-[#FF7A2F] text-white"
+            onClick={() => setLocation(`/contact/${profile!.id}`)}
+          >
+            申请联系
+          </Button>
+        )}
       </div>
     </div>
   );

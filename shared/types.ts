@@ -45,6 +45,7 @@ export interface ContactRequest {
   fromProfileId: string;
   fromParentName: string;
   fromChildName: string;
+  fromPhone?: string;  // 申请方电话号码，accepted 后对被申请方可见
   toUserId: string;
   toProfileId: string;
   toParentName: string;
