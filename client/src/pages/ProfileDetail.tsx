@@ -60,10 +60,9 @@ export default function ProfileDetail() {
   } | null = null;
 
   if (userProfile && userProfile.id === id) {
-    // 用户自己的资料 - 应用隐私设置
-    const displayPhone = userSettings.privacy.showContact 
-      ? userProfile.parentPhone 
-      : maskPhone(userProfile.parentPhone);
+    // 用户自己的资料 - 始终显示完整号码
+    // 隐私设置（showContact）只影响其他人看到的内容，不影响用户查看自己的号码
+    const displayPhone = userProfile.parentPhone;
     
     profile = {
       id: userProfile.id,

@@ -386,7 +386,7 @@ export default function Profile() {
                 </>
               ) : (
                 <>
-                  婉拒后，<strong>{confirmDialog.fromParentName}</strong>（{confirmDialog.fromChildName}的家长）将无法再次向您发送申请。
+                  婉拒后，<strong>{confirmDialog.fromParentName}</strong>（{confirmDialog.fromChildName}的家长）暂时无法再次向您发送申请。
                 </>
               )}
             </AlertDialogDescription>
